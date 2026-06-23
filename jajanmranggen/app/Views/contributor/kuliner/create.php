@@ -1,0 +1,151 @@
+<?= $this->extend('layouts/app') ?>
+<?= $this->section('content') ?>
+
+<?php $page_title = 'Tambah Kuliner Baru'; ?>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0 fw-700"><i class="bi bi-plus-circle me-2 text-primary"></i>Form Tambah Kuliner</h5>
+            </div>
+            <div class="card-body">
+                <form action="<?= base_url('contributor/kuliner/store') ?>" method="POST" enctype="multipart/form-data">
+                    <?= csrf_field() ?>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Nama Kuliner <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" value="<?= old('name') ?>" required placeholder="Contoh: Bakso Pak Harto">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="category_id" class="form-label">Kategori <span class="text-danger">*</span></label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                <option value="" disabled selected>Pilih Kategori</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?= $cat['id'] ?>" <?= old('category_id') == $cat['id'] ? 'selected' : '' ?>>
+                                        <?= esc($cat['name']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="description" class="form-label">Deskripsi</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Masukkan deskripsi menarik tentang kuliner ini..."><?= old('description') ?></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="photo" class="form-label">Foto Utama</label>
+                        <input class="form-control" type="file" id="photo" name="photo" accept="image/*">
+                        <small class="text-muted">Format: JPG, PNG. Maksimal 2MB.</small>
+                    </div>
+
+                    <!-- Map & Geocoding Section -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3"><i class="bi bi-map me-2 text-secondary"></i>Lokasi Geografis & Alamat</h6>
+                            
+                            <div class="mb-3">
+                                <label for="address_input" class="form-label">Alamat Lengkap <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="text" name="address" id="address_input" 
+                                           class="form-control" placeholder="Ketik alamat lengkap..."
+                                           value="<?= old('address') ?>" required>
+                                    <button type="button" class="btn btn-primary" id="btn_geocode">
+                                        📍 Cari Koordinat
+                                    </button>
+                                </div>
+                                <small class="text-muted">Ketik nama jalan/daerah di Mranggen lalu klik 'Cari Koordinat' untuk menaruh marker otomatis.</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <div id="map" style="height: 350px; border-radius: 8px;" class="shadow-sm"></div>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label">Latitude</label>
+                                    <input type="text" name="latitude" id="lat_input" class="form-control bg-white" readonly value="<?= old('latitude') ?>" placeholder="-6.9917">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Longitude</label>
+                                    <input type="text" name="longitude" id="lng_input" class="form-control bg-white" readonly value="<?= old('longitude') ?>" placeholder="110.4897">
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2">Anda juga dapat menggeser marker merah pada peta secara manual untuk menyesuaikan koordinat.</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="<?= base_url('contributor/kuliner') ?>" class="btn btn-light border px-4">Batal</a>
+                        <button type="submit" class="btn btn-primary-custom px-4">Simpan & Ajukan</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?= $this->endSection() ?>
+
+<?= $this->section('extra_head') ?>
+<!-- Leaflet JS & CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<?= $this->endSection() ?>
+
+<?= $this->section('extra_js') ?>
+<script>
+    // Koordinat default Mranggen
+    const defaultLat = parseFloat(document.getElementById('lat_input').value) || -6.9917;
+    const defaultLng = parseFloat(document.getElementById('lng_input').value) || 110.4897;
+
+    const map = L.map('map').setView([defaultLat, defaultLng], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+
+    // Update input koordinat saat marker digeser
+    marker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        document.getElementById('lat_input').value = pos.lat.toFixed(7);
+        document.getElementById('lng_input').value = pos.lng.toFixed(7);
+    });
+
+    // Jalankan geocode pencarian alamat
+    document.getElementById('btn_geocode').addEventListener('click', function() {
+        const address = document.getElementById('address_input').value;
+        if (!address) return alert('Isi alamat terlebih dahulu!');
+
+        this.disabled = true;
+        this.textContent = 'Mencari...';
+
+        fetch(`/contributor/kuliner/geocode?q=${encodeURIComponent(address)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Koordinat tidak ditemukan: ' + data.error);
+                } else {
+                    const lat = parseFloat(data.lat);
+                    const lng = parseFloat(data.lng);
+                    map.setView([lat, lng], 17);
+                    marker.setLatLng([lat, lng]);
+                    document.getElementById('lat_input').value = lat.toFixed(7);
+                    document.getElementById('lng_input').value = lng.toFixed(7);
+                }
+            })
+            .catch(() => alert('Terjadi kesalahan koneksi. Silakan atur marker secara manual.'))
+            .finally(() => {
+                this.disabled = false;
+                this.textContent = '📍 Cari Koordinat';
+            });
+    });
+</script>
+<?= $this->endSection() ?>
