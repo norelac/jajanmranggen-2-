@@ -296,6 +296,11 @@
     </a>
 
     <nav class="sidebar-nav mt-2">
+        <!-- Back to homepage always visible -->
+        <a href="<?= base_url('/') ?>" class="nav-link" style="color:#f48c06;font-weight:600;">
+            <i class="bi bi-house-fill"></i> Beranda Publik
+        </a>
+
         <?php if (session()->get('role') === 'admin'): ?>
         <div class="sidebar-section">Menu Admin</div>
         <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= (uri_string() === 'admin/dashboard') ? 'active' : '' ?>">
@@ -307,8 +312,14 @@
         <a href="<?= base_url('admin/kategori') ?>" class="nav-link <?= str_starts_with(uri_string(), 'admin/kategori') ? 'active' : '' ?>">
             <i class="bi bi-tag-fill"></i> Kategori
         </a>
+        <a href="<?= base_url('admin/tags') ?>" class="nav-link <?= str_starts_with(uri_string(), 'admin/tags') ? 'active' : '' ?>">
+            <i class="bi bi-hash"></i> Tag / Label
+        </a>
+        <a href="<?= base_url('admin/reviews') ?>" class="nav-link <?= str_starts_with(uri_string(), 'admin/reviews') ? 'active' : '' ?>">
+            <i class="bi bi-chat-square-text-fill"></i> Moderasi Ulasan
+        </a>
         <a href="<?= base_url('admin/users') ?>" class="nav-link <?= str_starts_with(uri_string(), 'admin/users') ? 'active' : '' ?>">
-            <i class="bi bi-people-fill"></i> Users
+            <i class="bi bi-people-fill"></i> Pengguna
         </a>
         <?php else: ?>
         <div class="sidebar-section">Menu Kontributor</div>
@@ -317,6 +328,12 @@
         </a>
         <a href="<?= base_url('contributor/kuliner') ?>" class="nav-link <?= str_starts_with(uri_string(), 'contributor/kuliner') ? 'active' : '' ?>">
             <i class="bi bi-shop"></i> Kuliner Saya
+        </a>
+        <a href="<?= base_url('contributor/kuliner/create') ?>" class="nav-link <?= (uri_string() === 'contributor/kuliner/create') ? 'active' : '' ?>">
+            <i class="bi bi-plus-circle-fill"></i> Tambah Kuliner
+        </a>
+        <a href="<?= base_url('favorites') ?>" class="nav-link <?= str_starts_with(uri_string(), 'favorites') ? 'active' : '' ?>">
+            <i class="bi bi-heart-fill"></i> Favorit Saya
         </a>
         <?php endif; ?>
 

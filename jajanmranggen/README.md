@@ -1,69 +1,125 @@
-# CodeIgniter 4 Application Starter
+# JajanMranggen - Kuliner Review Platform 🍔🗺️
 
-## What is CodeIgniter?
+JajanMranggen adalah platform berbasis web untuk menemukan, menambahkan, dan mengulas tempat makan atau jajanan di sekitar. Sistem ini dibangun dengan arsitektur MVC menggunakan **CodeIgniter 4**, dilengkapi integrasi geocoding otomatis (**OpenStreetMap Nominatim API**), peta interaktif (**Leaflet.js**), dan pembayaran sponsor (**Midtrans**).
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+---
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+## 🌟 Fitur Utama
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+- **🌍 Peta Interaktif & Geocoding**: Otomatis mendeteksi koordinat (Latitude/Longitude) dari teks alamat, ditampilkan dengan Leaflet.js.
+- **🔐 Multi-Role Auth (Admin & Kontributor)**: Pembatasan akses menggunakan filter CI4.
+- **⭐ Sistem Review & Rating Dinamis**: Auto-calculate nilai rata-rata dari seluruh ulasan pelanggan.
+- **❤️ Favorit (Bookmark)**: Simpan tempat kuliner favorit menggunakan sistem AJAX.
+- **🖼️ Auto-Resize Upload**: Otomatis memperkecil resolusi foto unggahan menggunakan CI4 Image Manipulation.
+- **🚀 API Endpoint**: Expose data spasial kuliner melalui `GET /api/kuliner` (dilindungi API Key).
+- **💳 Integrasi Midtrans**: Fitur bagi kontributor untuk mensponsori tempat kulinernya (promosi).
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+---
 
-## Installation & updates
+## 💻 Tech Stack
+- **Framework:** CodeIgniter 4
+- **Database:** MySQL
+- **Frontend:** Bootstrap 5, Custom Vanilla CSS, Bootstrap Icons
+- **Maps:** Leaflet.js
+- **Geocoding API:** OpenStreetMap Nominatim API
+- **Payment Gateway:** Midtrans (Sandbox)
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+---
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+## ⚙️ Persyaratan Sistem (Requirements)
+- PHP >= 8.1
+- Composer
+- Ekstensi PHP: `intl`, `mbstring`, `json`, `mysqlnd`, `curl`, `gd` (untuk auto-resize image)
+- MySQL / MariaDB (via XAMPP/Laragon)
 
-## Setup
+---
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+## 🚀 Panduan Instalasi (Langkah demi Langkah)
 
-## Important Change with index.php
+1. **Clone Repository**
+   ```bash
+   git clone https://github.com/username/jajanmranggen.git
+   cd jajanmranggen
+   ```
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+2. **Install Dependensi Composer**
+   ```bash
+   composer install
+   ```
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+3. **Konfigurasi Environment (`.env`)**
+   Duplikat file `env` menjadi `.env` lalu buka file tersebut dan ubah konfigurasi berikut:
+   ```env
+   CI_ENVIRONMENT = development
 
-**Please** read the user guide for a better explanation of how CI4 works!
+   app.baseURL = 'http://localhost:8080/'
 
-## Repository Management
+   database.default.hostname = localhost
+   database.default.database = jajanmranggen_db
+   database.default.username = root
+   database.default.password = 
+   database.default.DBDriver = MySQLi
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+   # Konfigurasi Midtrans
+   midtrans.serverKey = 'SB-Mid-server-XXXXX'
+   midtrans.clientKey = 'SB-Mid-client-XXXXX'
+   midtrans.isProduction = false
+   ```
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+4. **Buat Database**
+   Buka phpMyAdmin / GUI Database Anda, buat database baru dengan nama `jajanmranggen_db`.
 
-## Server Requirements
+5. **Jalankan Migration & Seeder (Otomatis)**
+   Perintah ini akan membuat semua struktur tabel dan mengisi puluhan data dummy kuliner otomatis.
+   ```bash
+   php spark migrate:refresh --seed
+   ```
 
-PHP version 8.2 or higher is required, with the following extensions installed:
+6. **Jalankan Local Development Server**
+   ```bash
+   php spark serve
+   ```
+   Akses aplikasi melalui browser di: **http://localhost:8080**
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+---
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - The end of life date for PHP 8.1 was December 31, 2025.
-> - If you are still using below PHP 8.2, you should upgrade immediately.
-> - The end of life date for PHP 8.2 will be December 31, 2026.
+## 🔑 Kredensial Akun Demo
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+Seeder otomatis membuatkan beberapa akun untuk testing:
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+| Role | Username | Email | Password |
+| :--- | :--- | :--- | :--- |
+| **Admin** | admin | admin@jajanmranggen.test | `password123` |
+| **Kontributor** | bobby | bobby@example.com | `password123` |
+| **Kontributor** | andi | andi@example.com | `password123` |
+| **Kontributor** | siti | siti@example.com | `password123` |
+
+---
+
+## 📊 Struktur Database (ERD Singkat)
+
+Proyek ini telah menempuh normalisasi 3NF dengan relasi antar tabel sebagai berikut:
+1. `users` (id, username, email, password, role)
+2. `categories` (id, name, slug, description)
+3. `tags` (id, name, slug)
+4. `kuliner` (id, name, slug, address, latitude, longitude, category_id, contributor_id, average_rating, status, dll.)
+5. `kuliner_tags` (kuliner_id, tag_id) -> Tabel pivot M:M
+6. `reviews` (id, kuliner_id, user_id, rating, comment)
+7. `favorites` (id, user_id, kuliner_id)
+8. `payments` (id, user_id, kuliner_id, invoice_number, amount, status, snap_token)
+
+---
+
+## 📡 API Endpoint (Webservice)
+Tersedia API bagi developer pihak ketiga (misal: display info kampus/mobile app).
+
+**Endpoint:** `GET /api/kuliner`  
+**Headers:** `X-API-KEY : JAJANMRANGGEN_SECRET_KEY_2024`  
+**Query Params:**
+- `lat` (required) : Garis lintang titik pencarian.
+- `lng` (required) : Garis bujur titik pencarian.
+- `radius` (optional) : Radius pencarian dalam satuan KM (default 5).
+
+---
+
+> Dibuat untuk memenuhi kualifikasi Tugas Akhir Pemrograman Web Lanjut (CodeIgniter 4) - Universitas Dian Nuswantoro.
