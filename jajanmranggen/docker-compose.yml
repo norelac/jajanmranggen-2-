@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: jajanmranggen_app
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+      - ./public/uploads:/var/www/html/public/uploads
+    networks:
+      - jajanmranggen_net
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    container_name: jajanmranggen_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - jajanmranggen_net
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: jajanmranggen_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: jajanmranggen
+      MYSQL_USER: ci4user
+      MYSQL_PASSWORD: ci4pass
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - jajanmranggen_net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: jajanmranggen_pma
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ci4user
+      PMA_PASSWORD: ci4pass
+    networks:
+      - jajanmranggen_net
+    depends_on:
+      - db
+
+networks:
+  jajanmranggen_net:
+    driver: bridge
+
+volumes:
+  db_data:
