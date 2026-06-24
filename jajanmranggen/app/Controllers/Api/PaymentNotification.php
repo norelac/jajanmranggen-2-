@@ -5,22 +5,44 @@ use App\Models\PaymentModel;
 use App\Models\KulinerModel;
 use App\Models\UserModel;
 use App\Libraries\WhatsappNotification;
-use Midtrans\Config as MidtransConfig;
-use Midtrans\Notification;
+
 
 class PaymentNotification extends BaseController
 {
     public function handle()
     {
-        MidtransConfig::$serverKey    = env('midtrans.serverKey');
-        MidtransConfig::$isProduction = env('midtrans.isProduction', false);
-
+        $sharedKey = env('doku.sharedKey');
+        
+        $clientIdHeader = $this->request->getHeaderLine('Client-Id');
+        $requestIdHeader = $this->request->getHeaderLine('Request-Id');
+        $requestTimestampHeader = $this->request->getHeaderLine('Request-Timestamp');
+        $signatureHeader = $this->request->getHeaderLine('Signature');
+        
+        $jsonBody = $this->request->getBody();
+        $targetPath = '/api/payment/notification';
+        
+        // Verifikasi Signature DOKU
+        $digest = base64_encode(hash('sha256', $jsonBody, true));
+        $rawSignature = "Client-Id:" . $clientIdHeader . "\n" .
+                        "Request-Id:" . $requestIdHeader . "\n" .
+                        "Request-Timestamp:" . $requestTimestampHeader . "\n" .
+                        "Request-Target:" . $targetPath . "\n" .
+                        "Digest:" . $digest;
+        
+        $calculatedSignature = "HMACSHA256=" . base64_encode(hash_hmac('sha256', $rawSignature, $sharedKey, true));
+        
+        // Validasi signature
+        if (!empty($signatureHeader) && !hash_equals($calculatedSignature, $signatureHeader)) {
+            log_message('error', 'DOKU Webhook Invalid Signature');
+            return $this->response->setStatusCode(401)->setJSON(['error' => 'Invalid Signature']);
+        }
+        
         try {
-            $notification   = new Notification();
-            $transStatus    = $notification->transaction_status;
-            $fraudStatus    = $notification->fraud_status;
-            $orderId        = $notification->order_id;
-            $paymentMethod  = $notification->payment_type;
+            $data = json_decode($jsonBody, true);
+            
+            $orderId = $data['order']['invoice_number'] ?? '';
+            $transStatus = $data['transaction']['status'] ?? '';
+            $paymentMethod = $data['channel']['id'] ?? 'DOKU';
 
             $paymentModel = new PaymentModel();
             $kulinerModel = new KulinerModel();
@@ -30,7 +52,7 @@ class PaymentNotification extends BaseController
             $payment = $paymentModel->where('invoice_number', $orderId)->first();
             if (!$payment) return $this->response->setStatusCode(404);
 
-            if ($transStatus === 'capture' && $fraudStatus === 'accept' || $transStatus === 'settlement') {
+            if (strtoupper($transStatus) === 'SUCCESS') {
                 $paymentModel->update($payment['id'], [
                     'status'         => 'paid',
                     'payment_method' => $paymentMethod,
@@ -64,14 +86,14 @@ class PaymentNotification extends BaseController
                 );
                 $emailService->send();
 
-            } elseif (in_array($transStatus, ['cancel', 'deny', 'expire'])) {
+            } elseif (in_array(strtoupper($transStatus), ['FAILED', 'EXPIRED'])) {
                 $paymentModel->update($payment['id'], ['status' => 'failed']);
             }
 
             return $this->response->setJSON(['status' => 'ok']);
 
         } catch (\Exception $e) {
-            log_message('error', 'Midtrans Webhook Error: ' . $e->getMessage());
+            log_message('error', 'DOKU Webhook Error: ' . $e->getMessage());
             return $this->response->setStatusCode(500)->setJSON(['error' => $e->getMessage()]);
         }
     }

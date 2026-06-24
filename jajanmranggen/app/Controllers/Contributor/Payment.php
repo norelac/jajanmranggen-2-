@@ -4,8 +4,6 @@ use App\Controllers\BaseController;
 use App\Models\KulinerModel;
 use App\Models\PaymentModel;
 use App\Libraries\WhatsappNotification;
-use Midtrans\Config as MidtransConfig;
-use Midtrans\Snap;
 
 class Payment extends BaseController
 {
@@ -16,11 +14,6 @@ class Payment extends BaseController
     {
         $this->kulinerModel = new KulinerModel();
         $this->paymentModel = new PaymentModel();
-
-        MidtransConfig::$serverKey    = env('midtrans.serverKey');
-        MidtransConfig::$isProduction = env('midtrans.isProduction', false);
-        MidtransConfig::$isSanitized  = true;
-        MidtransConfig::$is3ds        = true;
     }
 
     public function sponsor($kuliner_id)
@@ -47,32 +40,69 @@ class Payment extends BaseController
             'status'         => 'pending',
         ]);
 
-        $params = [
-            'transaction_details' => [
-                'order_id'     => $invoice,
-                'gross_amount' => $amount,
+        $clientId = env('doku.clientId');
+        $sharedKey = env('doku.sharedKey');
+        $isProduction = env('doku.isProduction', false);
+        
+        $url = $isProduction ? 'https://api.doku.com/checkout/v1/payment' : 'https://api-sandbox.doku.com/checkout/v1/payment';
+        $targetPath = '/checkout/v1/payment';
+        
+        $requestId = bin2hex(random_bytes(16));
+        $timestamp = gmdate("Y-m-d\TH:i:s\Z");
+
+        $payload = [
+            'order' => [
+                'amount' => $amount,
+                'invoice_number' => $invoice,
+                'callback_url' => base_url('contributor/kuliner'),
             ],
-            'customer_details' => [
-                'first_name' => session()->get('username'),
-                'email'      => session()->get('email'),
+            'payment' => [
+                'payment_due_date' => 60
             ],
+            'customer' => [
+                'name' => session()->get('username'),
+                'email' => session()->get('email')
+            ]
         ];
 
-        try {
-            $snapToken = Snap::getSnapToken($params);
+        $jsonPayload = json_encode($payload);
+        $digest = base64_encode(hash('sha256', $jsonPayload, true));
 
-            $this->paymentModel->update($payment_id, ['snap_token' => $snapToken]);
+        $rawSignature = "Client-Id:" . $clientId . "\n" .
+                        "Request-Id:" . $requestId . "\n" .
+                        "Request-Timestamp:" . $timestamp . "\n" .
+                        "Request-Target:" . $targetPath . "\n" .
+                        "Digest:" . $digest;
 
-            return view('contributor/payment/checkout', [
-                'snap_token' => $snapToken,
-                'client_key' => env('midtrans.clientKey'),
-                'invoice'    => $invoice,
-            ]);
-        } catch (\Exception $e) {
-            // Rollback the created payment record if Midtrans token generation fails
+        $signature = base64_encode(hash_hmac('sha256', $rawSignature, $sharedKey, true));
+        $finalSignature = "HMACSHA256=" . $signature;
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayload);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Client-Id: ' . $clientId,
+            'Request-Id: ' . $requestId,
+            'Request-Timestamp: ' . $timestamp,
+            'Signature: ' . $finalSignature,
+            'Content-Type: application/json'
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $result = json_decode($response, true);
+
+        if ($httpCode == 200 && isset($result['response']['payment']['url'])) {
+            $paymentUrl = $result['response']['payment']['url'];
+            $this->paymentModel->update($payment_id, ['snap_token' => $paymentUrl]);
+            return redirect()->to($paymentUrl);
+        } else {
             $this->paymentModel->delete($payment_id);
-            
-            return redirect()->back()->with('error', 'Gagal menghubungi Midtrans. Pastikan konfigurasi API Key sudah benar.');
+            log_message('error', 'DOKU API Error: ' . $response);
+            return redirect()->back()->with('error', 'Gagal menghubungi DOKU. Pastikan konfigurasi API Key sudah benar.');
         }
     }
 }
