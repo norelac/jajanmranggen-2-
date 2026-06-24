@@ -56,6 +56,9 @@ $routes->group('admin', ['filter' => 'admin'], function ($routes) {
     // Reviews moderation
     $routes->get('reviews', 'Admin\Reviews::index');
     $routes->post('reviews/delete/(:num)', 'Admin\Reviews::delete/$1');
+
+    // Payments
+    $routes->get('payments', 'Admin\Payments::index');
 });
 
 // Contributor routes (protected)
@@ -70,6 +73,8 @@ $routes->group('contributor', ['filter' => 'contributor'], function ($routes) {
     $routes->get('kuliner/geocode', 'Contributor\KulinerContributor::geocode');
     $routes->get('payment/sponsor/(:num)', 'Contributor\Payment::sponsor/$1');
     $routes->post('payment/checkout', 'Contributor\Payment::checkout');
+    $routes->get('payment/finish', 'Contributor\Payment::finish');
+    $routes->get('payment/check-status/(:segment)', 'Contributor\Payment::checkStatus/$1');
 });
 
 // API routes (public endpoint + key protected)

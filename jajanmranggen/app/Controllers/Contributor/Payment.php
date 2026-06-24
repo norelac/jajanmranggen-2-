@@ -54,7 +54,7 @@ class Payment extends BaseController
             'order' => [
                 'amount' => $amount,
                 'invoice_number' => $invoice,
-                'callback_url' => base_url('contributor/kuliner'),
+                'callback_url' => base_url('contributor/payment/finish?invoice_number=' . $invoice),
             ],
             'payment' => [
                 'payment_due_date' => 60
@@ -64,6 +64,13 @@ class Payment extends BaseController
                 'email' => session()->get('email')
             ]
         ];
+
+        // Bypass setting dashboard jika kita definisikan URL notifikasi secara manual
+        if (!empty(env('doku.notificationUrl'))) {
+            $payload['additional_info'] = [
+                'override_notification_url' => env('doku.notificationUrl')
+            ];
+        }
 
         $jsonPayload = json_encode($payload);
         $digest = base64_encode(hash('sha256', $jsonPayload, true));
@@ -104,5 +111,30 @@ class Payment extends BaseController
             log_message('error', 'DOKU API Error: ' . $response);
             return redirect()->back()->with('error', 'Gagal menghubungi DOKU. Pastikan konfigurasi API Key sudah benar.');
         }
+    }
+
+    public function finish()
+    {
+        $invoice = $this->request->getGet('invoice_number');
+        
+        if (!$invoice) {
+            return redirect()->to('/contributor/kuliner')->with('error', 'Data invoice tidak ditemukan dari callback DOKU.');
+        }
+
+        $payment = $this->paymentModel->where('invoice_number', $invoice)->first();
+        if (!$payment) {
+            return redirect()->to('/contributor/kuliner')->with('error', 'Transaksi tidak dikenali.');
+        }
+
+        return view('contributor/payment/finish', ['payment' => $payment]);
+    }
+
+    public function checkStatus($invoice)
+    {
+        $payment = $this->paymentModel->where('invoice_number', $invoice)->first();
+        if ($payment) {
+            return $this->response->setJSON(['status' => $payment['status']]);
+        }
+        return $this->response->setStatusCode(404)->setJSON(['status' => 'not_found']);
     }
 }

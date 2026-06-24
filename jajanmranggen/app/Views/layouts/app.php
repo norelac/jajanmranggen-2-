@@ -321,6 +321,9 @@
         <a href="<?= base_url('admin/users') ?>" class="nav-link <?= str_starts_with(uri_string(), 'admin/users') ? 'active' : '' ?>">
             <i class="bi bi-people-fill"></i> Pengguna
         </a>
+        <a href="<?= base_url('admin/payments') ?>" class="nav-link <?= str_starts_with(uri_string(), 'admin/payments') ? 'active' : '' ?>">
+            <i class="bi bi-wallet2"></i> Data Pembayaran
+        </a>
         <?php else: ?>
         <div class="sidebar-section">Menu Kontributor</div>
         <a href="<?= base_url('contributor/dashboard') ?>" class="nav-link <?= (uri_string() === 'contributor/dashboard') ? 'active' : '' ?>">
