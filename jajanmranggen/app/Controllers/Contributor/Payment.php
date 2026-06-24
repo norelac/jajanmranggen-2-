@@ -58,14 +58,21 @@ class Payment extends BaseController
             ],
         ];
 
-        $snapToken = Snap::getSnapToken($params);
+        try {
+            $snapToken = Snap::getSnapToken($params);
 
-        $this->paymentModel->update($payment_id, ['snap_token' => $snapToken]);
+            $this->paymentModel->update($payment_id, ['snap_token' => $snapToken]);
 
-        return view('contributor/payment/checkout', [
-            'snap_token' => $snapToken,
-            'client_key' => env('midtrans.clientKey'),
-            'invoice'    => $invoice,
-        ]);
+            return view('contributor/payment/checkout', [
+                'snap_token' => $snapToken,
+                'client_key' => env('midtrans.clientKey'),
+                'invoice'    => $invoice,
+            ]);
+        } catch (\Exception $e) {
+            // Rollback the created payment record if Midtrans token generation fails
+            $this->paymentModel->delete($payment_id);
+            
+            return redirect()->back()->with('error', 'Gagal menghubungi Midtrans. Pastikan konfigurasi API Key sudah benar.');
+        }
     }
 }
