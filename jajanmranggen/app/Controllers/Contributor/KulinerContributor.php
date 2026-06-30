@@ -116,15 +116,16 @@ class KulinerContributor extends BaseController
         return redirect()->to('/contributor/kuliner')->with('success', 'Kuliner berhasil dihapus.');
     }
 
-    // Geocoding via Nominatim (AJAX)
+    //Geocoding via Nominatim
     public function geocode()
     {
         $address = $this->request->getGet('q');
         if (!$address) {
             return $this->response->setJSON(['error' => 'Alamat kosong']);
         }
-
-        $cacheKey = 'geocode_' . md5($address);
+        
+        //cache handling (menggunakan key baru agar tidak tabrakan dengan format cache lama)
+        $cacheKey = 'geocode_suggestions_' . md5($address);
         $cache    = \Config\Services::cache();
 
         if ($cached = $cache->get($cacheKey)) {
@@ -132,19 +133,36 @@ class KulinerContributor extends BaseController
         }
 
         $client   = \Config\Services::curlrequest();
-        $response = $client->get('https://nominatim.openstreetmap.org/search', [
-            'query'   => ['q' => $address, 'format' => 'json', 'limit' => 1],
-            'headers' => ['User-Agent' => 'JajanMranggen/1.0 (jajanmranggen@gmail.com)'],
-        ]);
+        try {
+            $response = $client->get('https://nominatim.openstreetmap.org/search', [
+                'query'   => [
+                    'q'            => $address, 
+                    'format'       => 'json', 
+                    'limit'        => 5,
+                    'countrycodes' => 'id' // Membatasi pencarian di Indonesia saja
+                ],
+                'headers' => ['User-Agent' => 'JajanMranggen/1.0 (jajanmranggen@gmail.com)'],
+            ]);
 
-        $result = json_decode($response->getBody(), true);
+            $result = json_decode($response->getBody(), true);
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['error' => 'Gagal menghubungi server geocoding.']);
+        }
 
         if (empty($result)) {
             return $this->response->setJSON(['error' => 'Koordinat tidak ditemukan.']);
         }
 
-        $data = ['lat' => $result[0]['lat'], 'lng' => $result[0]['lon'], 'display_name' => $result[0]['display_name']];
-        $cache->save($cacheKey, $data, 86400); // Cache 24 jam
+        $data = [];
+        foreach ($result as $item) {
+            $data[] = [
+                'lat'          => $item['lat'],
+                'lng'          => $item['lon'],
+                'display_name' => $item['display_name']
+            ];
+        }
+
+        $cache->save($cacheKey, $data, 86400); //cache 24 jam
 
         return $this->response->setJSON($data);
     }
@@ -160,13 +178,13 @@ class KulinerContributor extends BaseController
         $newName = $file->getRandomName();
         $file->move($uploadPath, $newName);
 
-        // Resize to max 800px width
+        //resize to max 800px width
         \Config\Services::image()
             ->withFile($uploadPath . $newName)
             ->resize(800, 600, true, 'width')
             ->save($uploadPath . $newName);
 
-        // Thumbnail 200x200
+        //thumbnail
         \Config\Services::image()
             ->withFile($uploadPath . $newName)
             ->fit(200, 200, 'center')

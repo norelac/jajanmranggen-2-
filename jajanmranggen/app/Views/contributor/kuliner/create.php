@@ -43,6 +43,10 @@
                         <small class="text-muted">Format: JPG, PNG. Maksimal 2MB.</small>
                     </div>
 
+                    <!-- Leaflet CSS -->
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
                     <!-- Map & Geocoding Section -->
                     <div class="card bg-light border-0 mb-4">
                         <div class="card-body">
@@ -50,15 +54,18 @@
                             
                             <div class="mb-3">
                                 <label for="address_input" class="form-label">Alamat Lengkap <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="text" name="address" id="address_input" 
-                                           class="form-control" placeholder="Ketik alamat lengkap..."
-                                           value="<?= old('address') ?>" required>
-                                    <button type="button" class="btn btn-primary" id="btn_geocode">
-                                        📍 Cari Koordinat
-                                    </button>
+                                <div class="position-relative">
+                                    <div class="input-group">
+                                        <input type="text" name="address" id="address_input" 
+                                               class="form-control" placeholder="Contoh: Jl. Raya Mranggen - Demak"
+                                               value="<?= old('address') ?>" required autocomplete="off">
+                                        <button type="button" class="btn btn-primary" id="btn_geocode">
+                                            📍 Cari Koordinat
+                                        </button>
+                                    </div>
+                                    <div id="search_suggestions" class="list-group position-absolute w-100 shadow-lg d-none" style="z-index: 1050; max-height: 250px; overflow-y: auto;"></div>
                                 </div>
-                                <small class="text-muted">Ketik nama jalan/daerah di Mranggen lalu klik 'Cari Koordinat' untuk menaruh marker otomatis.</small>
+                                <small class="text-muted">Ketik nama jalan/daerah lalu pilih rekomendasi alamat lengkap yang muncul agar lokasi lebih akurat.</small>
                             </div>
 
                             <div class="mb-3">
@@ -90,62 +97,127 @@
     </div>
 </div>
 
-<?= $this->endSection() ?>
+    <script>
+        // Koordinat default Mranggen
+        const defaultLat = parseFloat(document.getElementById('lat_input').value) || -6.9917;
+        const defaultLng = parseFloat(document.getElementById('lng_input').value) || 110.4897;
 
-<?= $this->section('extra_head') ?>
-<!-- Leaflet JS & CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<?= $this->endSection() ?>
+        const map = L.map('map').setView([defaultLat, defaultLng], 15);
 
-<?= $this->section('extra_js') ?>
-<script>
-    // Koordinat default Mranggen
-    const defaultLat = parseFloat(document.getElementById('lat_input').value) || -6.9917;
-    const defaultLng = parseFloat(document.getElementById('lng_input').value) || 110.4897;
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-    const map = L.map('map').setView([defaultLat, defaultLng], 15);
+        const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+        // Update input koordinat saat marker digeser
+        marker.on('dragend', function(e) {
+            const pos = e.target.getLatLng();
+            document.getElementById('lat_input').value = pos.lat.toFixed(7);
+            document.getElementById('lng_input').value = pos.lng.toFixed(7);
+        });
 
-    const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+        const addressInput = document.getElementById('address_input');
+        const suggestionsContainer = document.getElementById('search_suggestions');
+        let debounceTimer;
 
-    // Update input koordinat saat marker digeser
-    marker.on('dragend', function(e) {
-        const pos = e.target.getLatLng();
-        document.getElementById('lat_input').value = pos.lat.toFixed(7);
-        document.getElementById('lng_input').value = pos.lng.toFixed(7);
-    });
+        // Fungsi untuk merender daftar rekomendasi
+        function renderSuggestions(data) {
+            suggestionsContainer.innerHTML = '';
+            if (data.error || !Array.isArray(data) || data.length === 0) {
+                const item = document.createElement('div');
+                item.className = 'list-group-item list-group-item-action text-muted small disabled';
+                item.textContent = 'Alamat tidak ditemukan';
+                suggestionsContainer.appendChild(item);
+                suggestionsContainer.classList.remove('d-none');
+                return;
+            }
 
-    // Jalankan geocode pencarian alamat
-    document.getElementById('btn_geocode').addEventListener('click', function() {
-        const address = document.getElementById('address_input').value;
-        if (!address) return alert('Isi alamat terlebih dahulu!');
-
-        this.disabled = true;
-        this.textContent = 'Mencari...';
-
-        fetch(`/contributor/kuliner/geocode?q=${encodeURIComponent(address)}`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    alert('Koordinat tidak ditemukan: ' + data.error);
-                } else {
-                    const lat = parseFloat(data.lat);
-                    const lng = parseFloat(data.lng);
-                    map.setView([lat, lng], 17);
-                    marker.setLatLng([lat, lng]);
+            data.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'list-group-item list-group-item-action text-start small py-2';
+                btn.innerHTML = `<i class="bi bi-geo-alt-fill text-primary me-2"></i>${item.display_name}`;
+                btn.addEventListener('click', () => {
+                    addressInput.value = item.display_name;
+                    const lat = parseFloat(item.lat);
+                    const lng = parseFloat(item.lng);
                     document.getElementById('lat_input').value = lat.toFixed(7);
                     document.getElementById('lng_input').value = lng.toFixed(7);
-                }
-            })
-            .catch(() => alert('Terjadi kesalahan koneksi. Silakan atur marker secara manual.'))
-            .finally(() => {
-                this.disabled = false;
-                this.textContent = '📍 Cari Koordinat';
+                    map.setView([lat, lng], 17);
+                    marker.setLatLng([lat, lng]);
+                    suggestionsContainer.classList.add('d-none');
+                });
+                suggestionsContainer.appendChild(btn);
             });
-    });
-</script>
+            suggestionsContainer.classList.remove('d-none');
+        }
+
+        // Event listener saat pengguna mengetik alamat (auto-complete dengan debounce)
+        addressInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+            if (query.length < 4) {
+                suggestionsContainer.classList.add('d-none');
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetch(`/contributor/kuliner/geocode?q=${encodeURIComponent(query)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        renderSuggestions(data);
+                    })
+                    .catch(() => {
+                        console.error('Gagal memuat rekomendasi alamat');
+                    });
+            }, 600);
+        });
+
+        // Event listener saat mengklik tombol 'Cari Koordinat'
+        document.getElementById('btn_geocode').addEventListener('click', function() {
+            const address = addressInput.value.trim();
+            if (!address) return alert('Isi alamat terlebih dahulu!');
+
+            this.disabled = true;
+            this.textContent = 'Mencari...';
+
+            fetch(`/contributor/kuliner/geocode?q=${encodeURIComponent(address)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error || !Array.isArray(data) || data.length === 0) {
+                        alert('Koordinat tidak ditemukan.');
+                        suggestionsContainer.classList.add('d-none');
+                    } else if (data.length === 1) {
+                        // Jika hanya ada 1 hasil, langsung pilih
+                        const item = data[0];
+                        addressInput.value = item.display_name;
+                        const lat = parseFloat(item.lat);
+                        const lng = parseFloat(item.lng);
+                        document.getElementById('lat_input').value = lat.toFixed(7);
+                        document.getElementById('lng_input').value = lng.toFixed(7);
+                        map.setView([lat, lng], 17);
+                        marker.setLatLng([lat, lng]);
+                        suggestionsContainer.classList.add('d-none');
+                    } else {
+                        // Jika banyak hasil, tampilkan daftarnya
+                        renderSuggestions(data);
+                        alert('Ditemukan beberapa lokasi yang mirip. Silakan pilih salah satu alamat lengkap dari daftar di bawah kolom alamat.');
+                    }
+                })
+                .catch(() => alert('Terjadi kesalahan koneksi. Silakan atur marker secara manual.'))
+                .finally(() => {
+                    this.disabled = false;
+                    this.textContent = '📍 Cari Koordinat';
+                });
+        });
+
+        // Klik di luar rekomendasi untuk menutup list
+        document.addEventListener('click', function(e) {
+            if (!addressInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                suggestionsContainer.classList.add('d-none');
+            }
+        });
+    </script>
+
 <?= $this->endSection() ?>

@@ -31,11 +31,19 @@ class KulinerAdmin extends BaseController
         if ($status) {
             $builder->where('kuliner.status', $status);
         }
+        // kalau ngesearch bisa pake semua kata/ga spesifik (memakai 'OR LIKE')
         if ($search) {
-            $builder->groupStart()
-                    ->like('kuliner.name', $search)
-                    ->orLike('users.username', $search)
-                    ->groupEnd();
+            $words = array_filter(explode(' ', trim($search)));
+            if (!empty($words)) {
+                $builder->groupStart();
+                foreach ($words as $word) {
+                    $builder->groupStart()
+                            ->like('kuliner.name', $word)
+                            ->orLike('users.username', $word)
+                            ->groupEnd();
+                }
+                $builder->groupEnd();
+            }
         }
 
         $data = [

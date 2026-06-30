@@ -28,12 +28,20 @@ class Kuliner extends BaseController
                            ->join('categories', 'categories.id = kuliner.category_id', 'left')
                            ->where('kuliner.status', 'approved');
 
+        // kalau ngesearch bisa pake semua kata/ga spesifik (memakai 'OR LIKE')
         if ($search) {
-            $this->kulinerModel->groupStart()
-                               ->like('kuliner.name', $search)
-                               ->orLike('kuliner.address', $search)
-                               ->orLike('categories.name', $search)
-                               ->groupEnd();
+            $words = array_filter(explode(' ', trim($search)));
+            if (!empty($words)) {
+                $this->kulinerModel->groupStart();
+                foreach ($words as $word) {
+                    $this->kulinerModel->groupStart()
+                                       ->like('kuliner.name', $word)
+                                       ->orLike('kuliner.address', $word)
+                                       ->orLike('categories.name', $word)
+                                       ->groupEnd();
+                }
+                $this->kulinerModel->groupEnd();
+            }
         }
 
         if ($category) {
