@@ -117,6 +117,7 @@
             document.getElementById('lng_input').value = pos.lng.toFixed(7);
         });
 
+<<<<<<< HEAD
         const addressInput = document.getElementById('address_input');
         const suggestionsContainer = document.getElementById('search_suggestions');
         let debounceTimer;
@@ -203,6 +204,28 @@
                         // Jika banyak hasil, tampilkan daftarnya
                         renderSuggestions(data);
                         alert('Ditemukan beberapa lokasi yang mirip. Silakan pilih salah satu alamat lengkap dari daftar di bawah kolom alamat.');
+=======
+        // Geocode pencarian alamat
+        document.getElementById('btn_geocode').addEventListener('click', function() {
+            const address = document.getElementById('address_input').value;
+            if (!address) return alert('Isi alamat terlebih dahulu!');
+
+            this.disabled = true;
+            this.textContent = 'Mencari...';
+
+            fetch(`/contributor/kuliner/geocode?q=${encodeURIComponent(address)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Koordinat tidak ditemukan: ' + data.error);
+                    } else {
+                        const lat = parseFloat(data.lat);
+                        const lng = parseFloat(data.lng);
+                        map.setView([lat, lng], 17);
+                        marker.setLatLng([lat, lng]);
+                        document.getElementById('lat_input').value = lat.toFixed(7);
+                        document.getElementById('lng_input').value = lng.toFixed(7);
+>>>>>>> dfdba58 (Menyelesaikan Payment Gateway)
                     }
                 })
                 .catch(() => alert('Terjadi kesalahan koneksi. Silakan atur marker secara manual.'))
@@ -211,6 +234,7 @@
                     this.textContent = '📍 Cari Koordinat';
                 });
         });
+<<<<<<< HEAD
 
         // Klik di luar rekomendasi untuk menutup list
         document.addEventListener('click', function(e) {
@@ -221,3 +245,8 @@
     </script>
 
 <?= $this->endSection() ?>
+=======
+    </script>
+
+<?= $this->endSection() ?>
+>>>>>>> dfdba58 (Menyelesaikan Payment Gateway)

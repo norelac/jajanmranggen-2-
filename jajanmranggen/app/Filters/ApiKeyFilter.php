@@ -17,6 +17,7 @@ class ApiKeyFilter implements FilterInterface
                 ->setJSON(['status' => 'error', 'message' => 'API Key tidak valid.']);
         }
     }
+    //
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null) {}
 }

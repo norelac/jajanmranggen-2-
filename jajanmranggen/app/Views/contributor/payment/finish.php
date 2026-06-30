@@ -11,9 +11,14 @@
                             <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
                         </div>
                         <h3 class="fw-bold">Pembayaran Berhasil!</h3>
-                        <p class="text-muted mt-3 fs-5">
+<p class="text-muted mt-3 fs-5">
                             Terima kasih, pembayaran untuk invoice <strong><?= esc($payment['invoice_number']) ?></strong> telah kami terima. Kuliner Anda kini telah dipromosikan.
                         </p>
+                        <div class="mt-3">
+                            <a href="<?= base_url('payment/invoice/' . $payment['invoice_number']) ?>" class="btn btn-outline-success btn-sm" target="_blank">
+                                <i class="bi bi-receipt"></i> Lihat / Cetak Bukti Pembayaran
+                            </a>
+                        </div>
                     <?php elseif ($payment['status'] === 'failed'): ?>
                         <div class="mb-4">
                             <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
@@ -34,6 +39,9 @@
                             Jika Anda sudah melakukan pembayaran di halaman DOKU, mohon tunggu beberapa saat hingga sistem memverifikasi pembayaran Anda secara otomatis. Anda juga akan menerima notifikasi via WhatsApp/Email saat pembayaran berhasil.
                         </p>
                         <p class="mt-3">
+                            <a href="<?= base_url('payment/invoice/' . $payment['invoice_number']) ?>" class="btn btn-outline-info btn-sm" target="_blank">
+                                <i class="bi bi-receipt"></i> Lihat Status Pembayaran
+                            </a>
                             <button onclick="window.location.reload();" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-arrow-clockwise"></i> Cek Status Manual
                             </button>

@@ -95,7 +95,7 @@
         }
 
         /* Buttons Custom */
-        .btn-custom {
+        .btn-custom, .btn-primary-custom {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             border: none;
@@ -107,7 +107,7 @@
             box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
         }
         
-        .btn-custom:hover {
+        .btn-custom:hover, .btn-primary-custom:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
             color: white;

@@ -17,6 +17,9 @@ $routes->get('/kuliner', 'Kuliner::index');
 $routes->get('/kuliner/(:segment)', 'Kuliner::show/$1');
 $routes->post('/kuliner/storeReview', 'Kuliner::storeReview');
 
+// Payment invoice public (bukti pembayaran)
+$routes->get('payment/invoice/(:segment)', 'PaymentInvoice::show/$1');
+
 // Favorites (AJAX, requires auth)
 $routes->post('/favorites/toggle', 'Favorites::toggle', ['filter' => 'auth']);
 $routes->get('/favorites', 'Favorites::index', ['filter' => 'auth']);
@@ -26,6 +29,7 @@ $routes->get('/admin', 'Admin\Dashboard::index', ['filter' => 'admin']);
 $routes->group('admin', ['filter' => 'admin'], function ($routes) {
     $routes->get('dashboard', 'Admin\Dashboard::index');
 
+    //
     // Kuliner moderation
     $routes->get('kuliner', 'Admin\KulinerAdmin::index');
     $routes->get('kuliner/(:num)', 'Admin\KulinerAdmin::show/$1');

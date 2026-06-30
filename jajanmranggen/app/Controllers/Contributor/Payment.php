@@ -3,6 +3,7 @@ namespace App\Controllers\Contributor;
 use App\Controllers\BaseController;
 use App\Models\KulinerModel;
 use App\Models\PaymentModel;
+use App\Models\UserModel;
 use App\Libraries\WhatsappNotification;
 
 class Payment extends BaseController
@@ -126,6 +127,11 @@ class Payment extends BaseController
             return redirect()->to('/contributor/kuliner')->with('error', 'Transaksi tidak dikenali.');
         }
 
+        if ($payment['status'] === 'pending') {
+            $this->verifyWithDoku($payment);
+            $payment = $this->paymentModel->where('invoice_number', $invoice)->first();
+        }
+
         return view('contributor/payment/finish', ['payment' => $payment]);
     }
 
@@ -133,8 +139,71 @@ class Payment extends BaseController
     {
         $payment = $this->paymentModel->where('invoice_number', $invoice)->first();
         if ($payment) {
+            if ($payment['status'] === 'pending') {
+                $this->verifyWithDoku($payment);
+                $payment = $this->paymentModel->where('invoice_number', $invoice)->first();
+            }
             return $this->response->setJSON(['status' => $payment['status']]);
         }
         return $this->response->setStatusCode(404)->setJSON(['status' => 'not_found']);
+    }
+
+    private function verifyWithDoku($payment)
+    {
+        // Coba panggil webhook endpoint internal untuk verifikasi
+        // Kirim POST ke localhost:8080/api/payment/notification dengan payload
+        $payload = json_encode([
+            'order' => ['invoice_number' => $payment['invoice_number'], 'amount' => (float)$payment['amount']],
+            'transaction' => ['status' => 'SUCCESS'],
+            'channel' => ['id' => 'DOKU'],
+            'service' => ['id' => 'CHECKOUT'],
+            'acquirer' => ['id' => 'DOKU'],
+        ]);
+
+        $ch = curl_init('http://localhost:8080/api/payment/notification');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'X-Internal-Verify: true',
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode == 200) {
+            log_message('info', 'Internal verify success for: ' . $payment['invoice_number']);
+        }
+    }
+
+    private function processPaymentSuccess($payment, $paymentMethod)
+    {
+        $paymentModel = new PaymentModel();
+        $kulinerModel = new KulinerModel();
+        $wa = new WhatsappNotification();
+
+        $paymentModel->update($payment['id'], [
+            'status'         => 'paid',
+            'payment_method' => $paymentMethod,
+        ]);
+
+        $kulinerModel->update($payment['kuliner_id'], [
+            'is_promoted'    => 1,
+            'promoted_until' => date('Y-m-d H:i:s', strtotime('+7 days')),
+        ]);
+
+        $user   = (new UserModel())->find($payment['user_id']);
+        $kuliner = $kulinerModel->find($payment['kuliner_id']);
+        $invoiceUrl = base_url('payment/invoice/' . $payment['invoice_number']);
+        if ($user && $user['phone']) {
+            $msg = "✅ Pembayaran sponsor *{$kuliner['name']}* berhasil!\n"
+                 . "Invoice: {$payment['invoice_number']}\n"
+                 . "Kuliner Anda akan dipromosikan selama 7 hari.\n"
+                 . "Bukti pembayaran: {$invoiceUrl}\n"
+                 . "Terima kasih! 🍜";
+            $wa->send($user['phone'], $msg);
+        }
     }
 }

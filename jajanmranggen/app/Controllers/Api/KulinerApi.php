@@ -83,6 +83,7 @@ class KulinerApi extends BaseController
             'radius'  => $radius,
             'center'  => ['lat' => (float) $lat, 'lng' => (float) $lng],
             'data'    => $data,
+            //
         ]);
     }
 }

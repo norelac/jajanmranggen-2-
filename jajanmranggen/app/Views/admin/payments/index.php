@@ -16,12 +16,13 @@
                         <th>Kuliner</th>
                         <th>Nominal</th>
                         <th>Status</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if(empty($payments)): ?>
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
+                            <td colspan="7" class="text-center py-5 text-muted">
                                 <i class="bi bi-inbox fs-1 d-block mb-3"></i>
                                 Belum ada riwayat transaksi.
                             </td>
@@ -54,6 +55,11 @@
                                     <?php else: ?>
                                         <span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="bi bi-clock-history me-1"></i> Pending</span>
                                     <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="<?= base_url('payment/invoice/' . $p['invoice_number']) ?>" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="bi bi-receipt"></i> Invoice
+                                    </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

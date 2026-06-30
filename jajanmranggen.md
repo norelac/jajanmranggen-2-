@@ -1,15 +1,3 @@
-
-Percakapan dengan Gemini
-okey jadi, saya sudah membuat projet website kuliner review, tapi masih banyak kurang dari website saya, jadi tolong buatkan file md sebagai penunjuknya. jadi buatkan spesifikasi project kuliner review dan setiap milestone 1-10. buatkan file md nya
-
-Berikut adalah file spesifikasi lengkap dan panduan milestone (1 sampai 10) untuk menyempurnakan project website review kuliner Anda berdasarkan standar kurikulum Pemrograman Web Lanjut CodeIgniter 4.
-
-Your MD file is ready
-Ikon MD
-Panduan_Spesifikasi_Project_Kuliner_Review
- MD 
-Buka
-
 Ringkasan Milestone di dalam File .md:
 Milestone 1: Inisialisasi framework, konfigurasi .env, dan perancangan ERD Database hingga 3NF.
 

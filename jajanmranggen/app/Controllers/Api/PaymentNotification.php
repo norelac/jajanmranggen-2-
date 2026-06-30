@@ -21,20 +21,25 @@ class PaymentNotification extends BaseController
         $jsonBody = $this->request->getBody();
         $targetPath = '/api/payment/notification';
         
-        // Verifikasi Signature DOKU
-        $digest = base64_encode(hash('sha256', $jsonBody, true));
-        $rawSignature = "Client-Id:" . $clientIdHeader . "\n" .
-                        "Request-Id:" . $requestIdHeader . "\n" .
-                        "Request-Timestamp:" . $requestTimestampHeader . "\n" .
-                        "Request-Target:" . $targetPath . "\n" .
-                        "Digest:" . $digest;
+        // Internal verification dari server sendiri (localhost) — lewati signature check
+        $isInternalVerify = $this->request->getHeaderLine('X-Internal-Verify') === 'true';
         
-        $calculatedSignature = "HMACSHA256=" . base64_encode(hash_hmac('sha256', $rawSignature, $sharedKey, true));
-        
-        // Validasi signature
-        if (!empty($signatureHeader) && !hash_equals($calculatedSignature, $signatureHeader)) {
-            log_message('error', 'DOKU Webhook Invalid Signature');
-            return $this->response->setStatusCode(401)->setJSON(['error' => 'Invalid Signature']);
+        if (!$isInternalVerify) {
+            // Verifikasi Signature DOKU
+            $digest = base64_encode(hash('sha256', $jsonBody, true));
+            $rawSignature = "Client-Id:" . $clientIdHeader . "\n" .
+                            "Request-Id:" . $requestIdHeader . "\n" .
+                            "Request-Timestamp:" . $requestTimestampHeader . "\n" .
+                            "Request-Target:" . $targetPath . "\n" .
+                            "Digest:" . $digest;
+            
+            $calculatedSignature = "HMACSHA256=" . base64_encode(hash_hmac('sha256', $rawSignature, $sharedKey, true));
+            
+            // Validasi signature
+            if (!empty($signatureHeader) && !hash_equals($calculatedSignature, $signatureHeader)) {
+                log_message('error', 'DOKU Webhook Invalid Signature');
+                return $this->response->setStatusCode(401)->setJSON(['error' => 'Invalid Signature']);
+            }
         }
         
         try {
@@ -66,10 +71,13 @@ class PaymentNotification extends BaseController
                 // Kirim notifikasi WA
                 $user   = $userModel->find($payment['user_id']);
                 $kuliner = $kulinerModel->find($payment['kuliner_id']);
+                $invoiceUrl = base_url('payment/invoice/' . $orderId);
                 if ($user && $user['phone']) {
                     $msg = "✅ Pembayaran sponsor *{$kuliner['name']}* berhasil!\n"
                          . "Invoice: {$orderId}\n"
-                         . "Kuliner Anda akan dipromosikan selama 7 hari.\nTerima kasih! 🍜";
+                         . "Kuliner Anda akan dipromosikan selama 7 hari.\n"
+                         . "Bukti pembayaran: {$invoiceUrl}\n"
+                         . "Terima kasih! 🍜";
                     $wa->send($user['phone'], $msg);
                 }
 
@@ -82,9 +90,12 @@ class PaymentNotification extends BaseController
                     <p>Halo <strong>{$user['username']}</strong>,</p>
                     <p>Kuliner <strong>{$kuliner['name']}</strong> kamu berhasil disponsori selama 7 hari.</p>
                     <p>Invoice: <code>{$orderId}</code></p>
+                    <p>Lihat bukti pembayaran: <a href=\"{$invoiceUrl}\">{$invoiceUrl}</a></p>
                     <p>Terima kasih telah menggunakan JajanMranggen! 🍜</p>"
                 );
-                $emailService->send();
+                if (!$emailService->send()) {
+                    log_message('error', 'Email Gagal: ' . print_r($emailService->printDebugger(['headers', 'subject']), true));
+                }
 
             } elseif (in_array(strtoupper($transStatus), ['FAILED', 'EXPIRED'])) {
                 $paymentModel->update($payment['id'], ['status' => 'failed']);
