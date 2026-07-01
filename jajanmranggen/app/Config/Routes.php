@@ -80,7 +80,7 @@ $routes->group('contributor', ['filter' => 'contributor'], function ($routes) {
     $routes->get('payment/finish', 'Contributor\Payment::finish');
     $routes->get('payment/check-status/(:segment)', 'Contributor\Payment::checkStatus/$1');
 });
-
+// 
 // API routes (public endpoint + key protected)
 $routes->group('api', ['filter' => 'apikey'], function ($routes) {
     $routes->get('kuliner', 'Api\KulinerApi::index');

@@ -1,6 +1,6 @@
 # JajanMranggen - Kuliner Review Platform 🍔🗺️
 
-JajanMranggen adalah platform berbasis web untuk menemukan, menambahkan, dan mengulas tempat makan atau jajanan di sekitar. Sistem ini dibangun dengan arsitektur MVC menggunakan **CodeIgniter 4**, dilengkapi integrasi geocoding otomatis (**OpenStreetMap Nominatim API**), peta interaktif (**Leaflet.js**), dan pembayaran sponsor (**Midtrans**).
+JajanMranggen adalah platform berbasis web untuk menemukan, menambahkan, dan mengulas tempat makan atau jajanan di sekitar. Sistem ini dibangun dengan arsitektur MVC menggunakan **CodeIgniter 4**, dilengkapi integrasi geocoding otomatis (**OpenStreetMap Nominatim API**), peta interaktif (**Leaflet.js**), dan pembayaran sponsor (**DOKU Payment Gateway**).
 
 ---
 
@@ -12,7 +12,7 @@ JajanMranggen adalah platform berbasis web untuk menemukan, menambahkan, dan men
 - **❤️ Favorit (Bookmark)**: Simpan tempat kuliner favorit menggunakan sistem AJAX.
 - **🖼️ Auto-Resize Upload**: Otomatis memperkecil resolusi foto unggahan menggunakan CI4 Image Manipulation.
 - **🚀 API Endpoint**: Expose data spasial kuliner melalui `GET /api/kuliner` (dilindungi API Key).
-- **💳 Integrasi Midtrans**: Fitur bagi kontributor untuk mensponsori tempat kulinernya (promosi).
+- **💳 Integrasi DOKU Payment Gateway**: Fitur sponsor bagi kontributor untuk mempromosikan tempat kulinernya.
 
 ---
 
@@ -22,7 +22,7 @@ JajanMranggen adalah platform berbasis web untuk menemukan, menambahkan, dan men
 - **Frontend:** Bootstrap 5, Custom Vanilla CSS, Bootstrap Icons
 - **Maps:** Leaflet.js
 - **Geocoding API:** OpenStreetMap Nominatim API
-- **Payment Gateway:** Midtrans (Sandbox)
+- **Payment Gateway:** DOKU (Sandbox)
 
 ---
 
@@ -60,10 +60,10 @@ JajanMranggen adalah platform berbasis web untuk menemukan, menambahkan, dan men
    database.default.password = 
    database.default.DBDriver = MySQLi
 
-   # Konfigurasi Midtrans
-   midtrans.serverKey = 'SB-Mid-server-XXXXX'
-   midtrans.clientKey = 'SB-Mid-client-XXXXX'
-   midtrans.isProduction = false
+   # Konfigurasi DOKU Payment Gateway
+   doku.clientId = 'BRN-0254-XXXXXXXXXXXXX'
+   doku.sharedKey = 'SK-XXXXXXXXXXXXXXXXXXXX'
+   doku.isProduction = false
    ```
 
 4. **Buat Database**
@@ -111,14 +111,104 @@ Proyek ini telah menempuh normalisasi 3NF dengan relasi antar tabel sebagai beri
 ---
 
 ## 📡 API Endpoint (Webservice)
-Tersedia API bagi developer pihak ketiga (misal: display info kampus/mobile app).
+Tersedia API bagi developer pihak ketiga (misal: display info kampus / mobile app).
 
-**Endpoint:** `GET /api/kuliner`  
-**Headers:** `X-API-KEY : JAJANMRANGGEN_SECRET_KEY_2024`  
-**Query Params:**
-- `lat` (required) : Garis lintang titik pencarian.
-- `lng` (required) : Garis bujur titik pencarian.
-- `radius` (optional) : Radius pencarian dalam satuan KM (default 5).
+### Autentikasi
+Semua request wajib menyertakan API Key melalui header:
+
+| Header | Nilai |
+| :--- | :--- |
+| `X-API-KEY` | `JAJANMRANGGEN_SECRET_KEY_2024` |
+
+### Endpoint: Cari Kuliner Terdekat
+
+```
+GET /api/kuliner
+```
+
+**Query Parameters:**
+
+| Parameter | Tipe | Required | Default | Deskripsi |
+| :--- | :--- | :---: | :---: | :--- |
+| `lat` | float | ✅ | - | Latitude titik pusat pencarian |
+| `lng` | float | ✅ | - | Longitude titik pusat pencarian |
+| `radius` | float | ❌ | `5` | Radius pencarian dalam km (max 50) |
+| `category` | string | ❌ | - | Slug kategori untuk filter (contoh: `bakso-mie`) |
+
+**Contoh Request:**
+```http
+GET /api/kuliner?lat=-6.983&lng=110.409&radius=3&category=bakso-mie
+X-API-KEY: JAJANMRANGGEN_SECRET_KEY_2024
+```
+
+**Contoh Response (200 OK):**
+```json
+{
+    "status": "success",
+    "total": 2,
+    "radius": 3,
+    "center": {
+        "lat": -6.983,
+        "lng": 110.409
+    },
+    "data": [
+        {
+            "id": 5,
+            "name": "Bakso Pak Edi",
+            "slug": "bakso-pak-edi",
+            "description": "Bakso sapi ukuran besar dengan kuah kaldu gurih...",
+            "address": "Jl. Veteran No.15, Semarang",
+            "latitude": -6.985,
+            "longitude": 110.412,
+            "category_name": "Bakso & Mie",
+            "average_rating": 4.5,
+            "is_promoted": true,
+            "distance_km": 0.42
+        }
+    ]
+}
+```
+
+**Error Response (401 — API Key tidak valid):**
+```json
+{
+    "status": "error",
+    "message": "API Key tidak valid."
+}
+```
+
+**Error Response (400 — Parameter tidak lengkap):**
+```json
+{
+    "status": "error",
+    "message": "Parameter lat dan lng wajib diisi."
+}
+```
+
+### Catatan
+- Perhitungan jarak menggunakan **rumus Haversine** untuk akurasi spasial.
+- Data yang dikembalikan hanya kuliner dengan status **approved**.
+
+---
+
+## 💳 Payment Gateway (DOKU)
+
+Kontributor dapat mensponsori tempat kuliner untuk dipromosikan selama 7 hari.
+
+### Alur Pembayaran
+1. Kontributor memilih kuliner untuk disponsori (Rp50.000 / 7 hari)
+2. Sistem generate invoice & redirect ke halaman pembayaran **DOKU** (sandbox)
+3. Pelanggan membayar melalui channel yang tersedia di DOKU
+4. DOKU mengirim notifikasi ke endpoint `/api/payment/notification`
+5. Sistem verifikasi **HMAC Signature**, update status menjadi `paid`
+6. Kuliner otomatis di-set `is_promoted = 1` selama 7 hari
+7. Notifikasi dikirim ke kontributor melalui **WhatsApp** dan **Email**
+
+### Teknologi Notifikasi
+| Channel | Tools |
+| :--- | :--- |
+| **WhatsApp** | Fonnte API (via `WhatsappNotification` library) |
+| **Email** | SMTP Mailtrap (sandbox) |
 
 ---
 

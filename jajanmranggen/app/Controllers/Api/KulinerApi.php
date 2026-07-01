@@ -59,7 +59,7 @@ class KulinerApi extends BaseController
 
         $model   = new KulinerModel();
         $kuliner = $model->getNearby((float) $lat, (float) $lng, $radius, $category ?: null);
-
+//
         // Format data respons (hilangkan field sensitif)
         $data = array_map(function ($item) {
             return [

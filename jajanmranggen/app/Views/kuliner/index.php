@@ -121,8 +121,8 @@
                         <a href="<?= base_url('kuliner/' . $kuliner['slug']) ?>" class="kuliner-card w-100">
                             <div class="kuliner-img-wrap">
                                 <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="<?= esc($kuliner['name']) ?>" class="kuliner-img">
-                                <?php if(isset($kuliner['is_sponsored']) && $kuliner['is_sponsored']): ?>
-                                    <div class="sponsor-badge"><i class="bi bi-star-fill me-1"></i> SPONSOR</div>
+                                <?php if(isset($kuliner['is_promoted']) && $kuliner['is_promoted']): ?>
+                                    <div class="sponsor-badge"><i class="bi bi-star-fill me-1"></i> PROMOTED</div>
                                 <?php endif; ?>
                                 <div class="rating-badge">
                                     <i class="bi bi-star-fill"></i>

@@ -49,6 +49,7 @@ class Kuliner extends BaseController
         }
 
         // Add a secondary sort order after rating
+        $this->kulinerModel->orderBy('kuliner.is_promoted', 'DESC');
         $this->kulinerModel->orderBy('kuliner.average_rating', 'DESC');
         $this->kulinerModel->orderBy('kuliner.created_at', 'DESC');
 

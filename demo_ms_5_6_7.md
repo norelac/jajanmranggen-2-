@@ -3,6 +3,130 @@
 
 ---
 
+## 🚀 Cara Menjalankan Project
+
+### Prasyarat
+
+| Software | Versi Minimal | Keterangan |
+|----------|--------------|------------|
+| **PHP** | 8.1+ | Termasuk ekstensi: `curl`, `mbstring`, `mysqli`, `intl`, `openssl` |
+| **Composer** | 2.x | Dependency manager PHP |
+| **MySQL / MariaDB** | 5.7+ / 10.4+ | Database server |
+| **Web Server** | Apache / Nginx | Bisa pakai Laragon (all-in-one) |
+| **Git** | - | Untuk clone repository |
+| **Postman** | - | Untuk demo Milestone 6 (opsional, bisa pakai browser) |
+| **Ngrok** | - | Untuk demo Milestone 7 (webhook DOKU) |
+
+### Langkah-Langkah
+
+#### 1. Clone Repository
+```bash
+git clone https://github.com/norelac/jajanmranggen-2-.git
+cd jajanmranggen-2-
+```
+> Atau ekstrak folder project jika mendapat file ZIP.
+
+#### 2. Install Dependency (Composer)
+```bash
+cd jajanmranggen
+composer install
+```
+
+#### 3. Konfigurasi Database
+Buka phpMyAdmin (atau MySQL CLI), buat database baru:
+```sql
+CREATE DATABASE jajanmranggen CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
+
+#### 4. Konfigurasi Environment (`.env`)
+```bash
+cp env .env
+```
+Lalu edit `.env`, sesuaikan nilai berikut:
+
+```ini
+# Database
+database.default.hostname = localhost
+database.default.database = jajanmranggen
+database.default.username = root
+database.default.password =
+
+# (Jika pakai XAMPP/Laragon, biarkan password kosong)
+
+# API Keys (sudah terisi, tinggal pakai)
+fonnte.token = 1Wp1GiSBDBcf6VwSYPAL
+
+# DOKU Sandbox (sudah terisi)
+doku.clientId = MCH-0123-9876543210
+doku.sharedKey = SK-abcdef1234567890abcdef1234567890
+
+# Email (Mailtrap untuk testing)
+email.SMTPHost = sandbox.smtp.mailtrap.io
+email.SMTPUser = a0578f1c7c375b
+email.SMTPPass = 42f65527070815
+email.SMTPPort = 2525
+email.SMTPTimeout = 300
+email.SMTPCrypto = tls
+email.fromEmail = a0578f1c7c375b@mailslurp.net
+```
+
+> **Catatan:** DOKU sandbox dan Fonnte token di atas sudah terisi dan siap pakai.
+
+#### 5. Jalankan Migration & Seeder
+```bash
+php spark migrate
+php spark db:seed "App\Database\Seeds\MainSeeder"
+```
+
+Perintah di atas akan:
+- Membuat tabel-tabel: `users`, `categories`, `kuliner`, `favorites`, `payments`, `reviews`, dll.
+- Mengisi data awal: **3 user**, **6 kategori**, **20 kuliner dummy**
+
+#### 6. Jalankan Server
+```bash
+php spark serve
+```
+Akses di browser: `http://localhost:8080`
+
+#### 7. Login Credentials untuk Demo
+
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | `admin@jajanmranggen.com` | `password` |
+| **Kontributor 1** | `kontributor1@gmail.com` | `password` |
+| **Kontributor 2** | `kontributor2@gmail.com` | `password` |
+
+> Untuk demo Milestone 5 (geocoding) dan Milestone 7 (payment), login sebagai **contributor**.
+
+#### 8. Menghentikan Server
+Tekan `Ctrl + C` di terminal tempat `php spark serve` berjalan.
+
+---
+
+### Struktur Folder Penting
+
+```
+jajanmranggen/
+├── app/
+│   ├── Config/              # Konfigurasi (Routes, Database, Email, dll)
+│   ├── Controllers/
+│   │   ├── Api/             # Controller API (KulinerApi, PaymentNotification)
+│   │   ├── Contributor/     # Controller halaman contributor
+│   │   └── ...
+│   ├── Database/
+│   │   ├── Migrations/      # File migrasi database
+│   │   └── Seeds/           # Seeder data dummy
+│   ├── Filters/             # Filter (ApiKeyFilter)
+│   ├── Libraries/           # Library (WhatsappNotification)
+│   ├── Models/              # Model database
+│   └── Views/               # Template view
+├── public/                  # Entry point (index.php)
+├── writable/                # Cache, logs, session
+└── .env                     # Environment configuration
+```
+
+---
+
 # ✅ MILESTONE 5 — Integrasi Webservice Client (Konsumsi API)
 > **Kriteria:** API terintegrasi, ada error handling, data di-cache
 
@@ -208,6 +332,26 @@ $routes->post('api/payment/notification', 'Api\PaymentNotification::handle');
 
 ## 🎬 Demo ke Dosen
 
+### Persiapan — Ngrok (Webhook Tunnel)
+
+> DOKU sandbox perlu mengirim webhook ke server kita. Karena `localhost` tidak bisa diakses dari luar, kita pakai **Ngrok** untuk membuat tunnel publik.
+
+```bash
+# Buka terminal BARU (jangan matikan php spark serve)
+ngrok http 8080
+```
+Setelah ngrok jalan, copy URL forwarding (contoh: `https://abc123.ngrok.io`), lalu:
+1. Buka `.env` → cari `doku.webhookUrl`
+2. Isi dengan URL ngrok + `/api/payment/notification`
+   ```
+   doku.webhookUrl = https://abc123.ngrok.io/api/payment/notification
+   ```
+3. Simpan `.env`, **restart** `php spark serve`
+
+> **Alternatif:** Jika ngrok bermasalah, bisa install ulang ngrok di https://ngrok.com/download. Pastikan `ngrok http 8080` jalan dan tampilkan status "Online".
+
+---
+
 ### Demo — Alur Lengkap Sponsor Kuliner & Notifikasi
 
 **Langkah:**
@@ -293,15 +437,19 @@ $routes->post('api/payment/notification', 'Api\PaymentNotification::handle');
 
 ## 📋 Checklist Sebelum Demo
 
+Centang semua item sebelum demo ke dosen:
+
 | Item | Milestone 5 | Milestone 6 | Milestone 7 |
 |------|:-----------:|:-----------:|:-----------:|
 | Server `php spark serve` jalan | ✅ | ✅ | ✅ |
-| Koneksi internet aktif | ✅ (Nominatim) | ❌ | ✅ (DOKU, Fonnte) |
+| Database sudah `migrate` + `seed` | ✅ | ✅ | ✅ |
+| Koneksi internet aktif | ✅ (Nominatim) | ❌ (tidak perlu) | ✅ (DOKU, Fonnte) |
 | Token Fonnte valid di `.env` | ✅ | ❌ | ✅ |
 | DOKU clientId & sharedKey di `.env` | ❌ | ❌ | ✅ |
 | Postman terinstall | ❌ | ✅ | ❌ |
-| Akun sandbox DOKU siap | ❌ | ❌ | ✅ |
-| Nomor HP terdaftar di Fonnte | ❌ | ❌ | ✅ |
+| Ngrok terinstall & tunneling jalan | ❌ | ❌ | ✅ |
+| Akun sandbox DOKU (bisa test payment) | ❌ | ❌ | ✅ |
+| `.env` webhookUrl diisi URL ngrok | ❌ | ❌ | ✅ |
 
 ---
 
