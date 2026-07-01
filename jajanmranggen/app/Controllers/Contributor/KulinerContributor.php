@@ -139,7 +139,7 @@ class KulinerContributor extends BaseController
                     'q'            => $address, 
                     'format'       => 'json', 
                     'limit'        => 5,
-                    'countrycodes' => 'id' // Membatasi pencarian di Indonesia saja
+                    'countrycodes' => 'id' // membatasi pencarian di Indonesia saja
                 ],
                 'headers' => ['User-Agent' => 'JajanMranggen/1.0 (jajanmranggen@gmail.com)'],
             ]);

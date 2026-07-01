@@ -114,7 +114,7 @@
 </div>
 
     <script>
-        // Koordinat default dari database atau default Mranggen
+        // koordinat default dari database atau default Mranggen
         const defaultLat = parseFloat(document.getElementById('lat_input').value) || -6.9917;
         const defaultLng = parseFloat(document.getElementById('lng_input').value) || 110.4897;
 
