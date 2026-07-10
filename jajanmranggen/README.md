@@ -261,23 +261,128 @@ jajanmranggen/
 ├── app/
 │   ├── Config/              # Konfigurasi (Routes, Database, Email, Filters)
 │   ├── Controllers/
-│   │   ├── Admin/           # Controller admin
+│   │   ├── Admin/           # Controller admin (Dashboard, KulinerAdmin, Kategori, Tags, Users, Reviews, Payments)
 │   │   ├── Api/             # Controller API (KulinerApi, PaymentNotification)
-│   │   ├── Contributor/     # Controller kontributor
+│   │   ├── Contributor/     # Controller kontributor (Dashboard, KulinerContributor, Payment)
 │   │   └── ...
 │   ├── Database/
-│   │   ├── Migrations/      # File migrasi database
-│   │   └── Seeds/           # Seeder data dummy
-│   ├── Filters/             # Filter (AuthFilter, ApiKeyFilter)
+│   │   ├── Migrations/      # File migrasi database (9 tabel)
+│   │   └── Seeds/           # Seeder data dummy (UserSeeder, CategorySeeder, KulinerSeeder)
+│   ├── Filters/             # Filter (AuthFilter, AdminFilter, ContributorFilter, ApiKeyFilter)
 │   ├── Libraries/           # Library (WhatsappNotification)
-│   ├── Models/              # Model database
-│   └── Views/               # Template view
-├── public/                  # Entry point (index.php)
+│   ├── Models/              # Model database (8 model)
+│   └── Views/               # Template view (admin, contributor, auth, kuliner, favorites, payment)
+├── public/                  # Entry point (index.php, assets, uploads)
 ├── writable/                # Cache, logs, session
+├── tests/                   # Unit test (AuthTest, ReviewRatingTest)
 ├── .env.example             # Template environment
 ├── composer.json            # Dependency PHP
 └── README.md                # Dokumentasi project
 ```
+
+---
+
+## ERD (Entity Relationship Diagram)
+
+```
+┌─────────────────┐       ┌─────────────────┐
+│     users        │       │   categories     │
+├─────────────────┤       ├─────────────────┤
+│ id (PK)         │       │ id (PK)         │
+│ username        │       │ name            │
+│ email           │       │ slug            │
+│ password        │       │ description     │
+│ role            │       │ created_at      │
+│ phone           │       │ updated_at      │
+│ created_at      │       └────────┬────────┘
+│ updated_at      │                │
+└────────┬────────┘                │
+         │                         │
+         │ 1:N                     │ 1:N
+         │                         │
+         ▼                         ▼
+┌─────────────────────────────────────────┐
+│              kuliner                     │
+├─────────────────────────────────────────┤
+│ id (PK)                                │
+│ name                                   │
+│ slug                                   │
+│ description                            │
+│ address                                │
+│ latitude                               │
+│ longitude                              │
+│ category_id (FK → categories.id)       │
+│ contributor_id (FK → users.id)         │
+│ status (pending/approved/rejected)     │
+│ average_rating                         │
+│ is_promoted                            │
+│ promoted_until                         │
+│ created_at                             │
+│ updated_at                             │
+└───┬──────────┬──────────┬──────────────┘
+    │          │          │
+    │ 1:N      │ 1:N      │ 1:N
+    ▼          ▼          ▼
+┌────────┐ ┌────────┐ ┌─────────────┐
+│reviews │ │photos  │ │  favorites   │
+├────────┤ ├────────┤ ├─────────────┤
+│id (PK) │ │id (PK) │ │id (PK)      │
+│kuliner_│ │kuliner_│ │user_id (FK) │
+│  id(FK)│ │  id(FK)│ │kuliner_id   │
+│user_id │ │filename│ │  (FK)       │
+│  (FK)  │ │is_prima│ │created_at   │
+│rating  │ │ry      │ └─────────────┘
+│comment │ │created_│
+│created_│ │  at    │
+│  at    │ │updated_│
+│updated_│ │  at    │
+│  at    │ └────────┘
+└────────┘
+
+┌─────────────────────────────────────────┐
+│             payments                     │
+├─────────────────────────────────────────┤
+│ id (PK)                                │
+│ user_id (FK → users.id)                │
+│ kuliner_id (FK → kuliner.id)           │
+│ invoice_number (UNIQUE)                │
+│ amount                                 │
+│ status (pending/paid/expired/failed)   │
+│ snap_token                             │
+│ payment_method                         │
+│ created_at                             │
+│ updated_at                             │
+└─────────────────────────────────────────┘
+
+┌─────────────────┐
+│      tags        │
+├─────────────────┤
+│ id (PK)         │
+│ name            │
+│ slug            │
+│ created_at      │
+│ updated_at      │
+└─────────────────┘
+
+┌─────────────────────┐
+│   kuliner_tags       │
+├─────────────────────┤
+│ kuliner_id (FK→PK)  │
+│ tag_id (FK→PK)      │
+└─────────────────────┘
+```
+
+**Relasi:**
+- `users` 1:N `kuliner` (kontributor)
+- `users` 1:N `reviews` (pembuat review)
+- `users` 1:N `favorites`
+- `users` 1:N `payments`
+- `categories` 1:N `kuliner`
+- `kuliner` 1:N `reviews`
+- `kuliner` 1:N `photos`
+- `kuliner` 1:N `favorites`
+- `kuliner` 1:N `payments`
+- `kuliner` M:N `tags` (via pivot `kuliner_tags`)
 
 ---
 

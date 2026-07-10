@@ -8,8 +8,14 @@ use App\Models\UserModel;
 use App\Models\CategoryModel;
 use App\Models\ReviewModel;
 
+/**
+ * Admin Dashboard - Ringkasan data aplikasi
+ */
 class Dashboard extends BaseController
 {
+    /**
+     * Tampilkan dashboard admin dengan statistik
+     */
     public function index()
     {
         $kulinerModel  = new KulinerModel();
@@ -18,22 +24,22 @@ class Dashboard extends BaseController
         $reviewModel   = new ReviewModel();
 
         $data = [
-            'title'             => 'Admin Dashboard',
-            'page_title'        => 'Beranda Admin',
-            'total_kuliner'     => $kulinerModel->countAllResults(),
-            'total_approved'    => $kulinerModel->where('status', 'approved')->countAllResults(),
-            'total_pending'     => $kulinerModel->where('status', 'pending')->countAllResults(),
-            'total_users'       => $userModel->countAllResults(),
-            'total_reviews'     => $reviewModel->countAllResults(),
-            'total_categories'  => $categoryModel->countAllResults(),
-            'recent_kuliner'    => $kulinerModel
+            'title'            => 'Admin Dashboard',
+            'page_title'       => 'Beranda Admin',
+            'total_kuliner'    => $kulinerModel->countAllResults(),
+            'total_approved'   => $kulinerModel->where('status', 'approved')->countAllResults(),
+            'total_pending'    => $kulinerModel->where('status', 'pending')->countAllResults(),
+            'total_users'      => $userModel->countAllResults(),
+            'total_reviews'    => $reviewModel->countAllResults(),
+            'total_categories' => $categoryModel->countAllResults(),
+            'recent_kuliner'   => $kulinerModel
                                     ->select('kuliner.*, categories.name as category_name, users.username as contributor_name')
                                     ->join('categories', 'categories.id = kuliner.category_id', 'left')
                                     ->join('users', 'users.id = kuliner.contributor_id', 'left')
                                     ->orderBy('kuliner.created_at', 'DESC')
                                     ->limit(5)
                                     ->findAll(),
-            'pending_kuliner'   => $kulinerModel
+            'pending_kuliner'  => $kulinerModel
                                     ->select('kuliner.*, categories.name as category_name, users.username as contributor_name')
                                     ->join('categories', 'categories.id = kuliner.category_id', 'left')
                                     ->join('users', 'users.id = kuliner.contributor_id', 'left')

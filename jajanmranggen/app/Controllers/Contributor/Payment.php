@@ -1,11 +1,16 @@
 <?php
+
 namespace App\Controllers\Contributor;
+
 use App\Controllers\BaseController;
 use App\Models\KulinerModel;
 use App\Models\PaymentModel;
 use App\Models\UserModel;
 use App\Libraries\WhatsappNotification;
 
+/**
+ * Payment Controller - Sponsor kuliner via DOKU Payment Gateway
+ */
 class Payment extends BaseController
 {
     protected $kulinerModel;
@@ -17,6 +22,9 @@ class Payment extends BaseController
         $this->paymentModel = new PaymentModel();
     }
 
+    /**
+     * Halaman sponsor kuliner
+     */
     public function sponsor($kuliner_id)
     {
         $kuliner = $this->kulinerModel->find($kuliner_id);
@@ -26,10 +34,13 @@ class Payment extends BaseController
         return view('contributor/payment/sponsor', ['kuliner' => $kuliner]);
     }
 
+    /**
+     * Proses checkout: buat invoice, sign HMAC, redirect ke DOKU
+     */
     public function checkout()
     {
         $kuliner_id = $this->request->getPost('kuliner_id');
-        $amount     = 50000; // Rp 50.000 untuk 7 hari promosi
+        $amount     = 50000;
 
         $invoice = 'INV-' . date('YmdHis') . '-' . session()->get('user_id');
 
@@ -41,32 +52,30 @@ class Payment extends BaseController
             'status'         => 'pending',
         ]);
 
-        $clientId = env('doku.clientId');
-        $sharedKey = env('doku.sharedKey');
+        $clientId     = env('doku.clientId');
+        $sharedKey    = env('doku.sharedKey');
         $isProduction = env('doku.isProduction', false);
-        
-        $url = $isProduction ? 'https://api.doku.com/checkout/v1/payment' : 'https://api-sandbox.doku.com/checkout/v1/payment';
+
+        $url        = $isProduction ? 'https://api.doku.com/checkout/v1/payment' : 'https://api-sandbox.doku.com/checkout/v1/payment';
         $targetPath = '/checkout/v1/payment';
-        
-        $requestId = bin2hex(random_bytes(16));
-        $timestamp = gmdate("Y-m-d\TH:i:s\Z");
+        $requestId  = bin2hex(random_bytes(16));
+        $timestamp  = gmdate("Y-m-d\TH:i:s\Z");
 
         $payload = [
             'order' => [
-                'amount' => $amount,
+                'amount'         => $amount,
                 'invoice_number' => $invoice,
-                'callback_url' => base_url('contributor/payment/finish?invoice_number=' . $invoice),
+                'callback_url'   => base_url('contributor/payment/finish?invoice_number=' . $invoice),
             ],
             'payment' => [
                 'payment_due_date' => 60
             ],
             'customer' => [
-                'name' => session()->get('username'),
+                'name'  => session()->get('username'),
                 'email' => session()->get('email')
             ]
         ];
 
-        // Bypass setting dashboard jika kita definisikan URL notifikasi secara manual
         if (!empty(env('doku.notificationUrl'))) {
             $payload['additional_info'] = [
                 'override_notification_url' => env('doku.notificationUrl')
@@ -74,7 +83,7 @@ class Payment extends BaseController
         }
 
         $jsonPayload = json_encode($payload);
-        $digest = base64_encode(hash('sha256', $jsonPayload, true));
+        $digest      = base64_encode(hash('sha256', $jsonPayload, true));
 
         $rawSignature = "Client-Id:" . $clientId . "\n" .
                         "Request-Id:" . $requestId . "\n" .
@@ -82,7 +91,7 @@ class Payment extends BaseController
                         "Request-Target:" . $targetPath . "\n" .
                         "Digest:" . $digest;
 
-        $signature = base64_encode(hash_hmac('sha256', $rawSignature, $sharedKey, true));
+        $signature      = base64_encode(hash_hmac('sha256', $rawSignature, $sharedKey, true));
         $finalSignature = "HMACSHA256=" . $signature;
 
         $ch = curl_init($url);
@@ -114,10 +123,13 @@ class Payment extends BaseController
         }
     }
 
+    /**
+     * Halaman selesai pembayaran (callback dari DOKU)
+     */
     public function finish()
     {
         $invoice = $this->request->getGet('invoice_number');
-        
+
         if (!$invoice) {
             return redirect()->to('/contributor/kuliner')->with('error', 'Data invoice tidak ditemukan dari callback DOKU.');
         }
@@ -135,6 +147,9 @@ class Payment extends BaseController
         return view('contributor/payment/finish', ['payment' => $payment]);
     }
 
+    /**
+     * AJAX: Cek status pembayaran
+     */
     public function checkStatus($invoice)
     {
         $payment = $this->paymentModel->where('invoice_number', $invoice)->first();
@@ -148,6 +163,9 @@ class Payment extends BaseController
         return $this->response->setStatusCode(404)->setJSON(['status' => 'not_found']);
     }
 
+    /**
+     * Verifikasi internal: update status, kirim notifikasi WA & email
+     */
     private function verifyWithDoku($payment)
     {
         $paymentModel = new PaymentModel();
@@ -170,11 +188,11 @@ class Payment extends BaseController
         $invoiceUrl = base_url('payment/invoice/' . $payment['invoice_number']);
 
         if ($user && $user['phone']) {
-            $msg = "✅ Pembayaran sponsor *{$kuliner['name']}* berhasil!\n"
+            $msg = "Pembayaran sponsor *{$kuliner['name']}* berhasil!\n"
                  . "Invoice: {$payment['invoice_number']}\n"
                  . "Kuliner Anda akan dipromosikan selama 7 hari.\n"
                  . "Bukti pembayaran: {$invoiceUrl}\n"
-                 . "Terima kasih! 🍜";
+                 . "Terima kasih!";
             $wa->send($user['phone'], $msg);
         }
 
@@ -187,41 +205,12 @@ class Payment extends BaseController
             <p>Kuliner <strong>{$kuliner['name']}</strong> kamu berhasil disponsori selama 7 hari.</p>
             <p>Invoice: <code>{$payment['invoice_number']}</code></p>
             <p>Lihat bukti pembayaran: <a href=\"{$invoiceUrl}\">{$invoiceUrl}</a></p>
-            <p>Terima kasih telah menggunakan JajanMranggen! 🍜</p>"
+            <p>Terima kasih telah menggunakan JajanMranggen!</p>"
         );
         if (!$emailService->send()) {
             log_message('error', 'Email Gagal: ' . print_r($emailService->printDebugger(['headers', 'subject']), true));
         }
 
         log_message('info', 'Internal verify success for: ' . $payment['invoice_number']);
-    }
-
-    private function processPaymentSuccess($payment, $paymentMethod)
-    {
-        $paymentModel = new PaymentModel();
-        $kulinerModel = new KulinerModel();
-        $wa = new WhatsappNotification();
-
-        $paymentModel->update($payment['id'], [
-            'status'         => 'paid',
-            'payment_method' => $paymentMethod,
-        ]);
-
-        $kulinerModel->update($payment['kuliner_id'], [
-            'is_promoted'    => 1,
-            'promoted_until' => date('Y-m-d H:i:s', strtotime('+7 days')),
-        ]);
-
-        $user   = (new UserModel())->find($payment['user_id']);
-        $kuliner = $kulinerModel->find($payment['kuliner_id']);
-        $invoiceUrl = base_url('payment/invoice/' . $payment['invoice_number']);
-        if ($user && $user['phone']) {
-            $msg = "✅ Pembayaran sponsor *{$kuliner['name']}* berhasil!\n"
-                 . "Invoice: {$payment['invoice_number']}\n"
-                 . "Kuliner Anda akan dipromosikan selama 7 hari.\n"
-                 . "Bukti pembayaran: {$invoiceUrl}\n"
-                 . "Terima kasih! 🍜";
-            $wa->send($user['phone'], $msg);
-        }
     }
 }

@@ -6,6 +6,9 @@ use App\Controllers\BaseController;
 use App\Models\ReviewModel;
 use App\Models\KulinerModel;
 
+/**
+ * Reviews Controller - Moderasi ulasan oleh admin
+ */
 class Reviews extends BaseController
 {
     protected $reviewModel;
@@ -17,6 +20,9 @@ class Reviews extends BaseController
         $this->kulinerModel = new KulinerModel();
     }
 
+    /**
+     * Daftar semua ulasan dengan pencarian
+     */
     public function index()
     {
         $search = $this->request->getGet('q') ?: '';
@@ -46,6 +52,9 @@ class Reviews extends BaseController
         return view('admin/reviews/index', $data);
     }
 
+    /**
+     * Hapus ulasan & recalculate average rating
+     */
     public function delete($id)
     {
         $review = $this->reviewModel->find($id);
@@ -56,7 +65,6 @@ class Reviews extends BaseController
         $kuliner_id = $review['kuliner_id'];
         $this->reviewModel->delete($id);
 
-        // Recalculate average rating
         $this->kulinerModel->updateAverageRating($kuliner_id);
 
         return redirect()->to('/admin/reviews')->with('success', 'Ulasan berhasil dihapus.');

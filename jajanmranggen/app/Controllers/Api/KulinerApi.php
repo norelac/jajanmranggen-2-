@@ -5,16 +5,21 @@ namespace App\Controllers\Api;
 use App\Controllers\BaseController;
 use App\Models\KulinerModel;
 
+/**
+ * KulinerApi Controller - REST API endpoint kuliner terdekat
+ * Dilindungi API Key via X-API-KEY header
+ */
 class KulinerApi extends BaseController
 {
     /**
      * GET /api/kuliner
+     * Mengembalikan daftar kuliner terdekat berdasarkan koordinat
      *
      * Query params:
-     *   - lat      (required) : latitude titik pusat pencarian
-     *   - lng      (required) : longitude titik pusat pencarian
-     *   - radius   (optional) : radius dalam km, default 5
-     *   - category (optional) : slug kategori, misal 'bakso-mie'
+     *   - lat      (required) : latitude titik pusat
+     *   - lng      (required) : longitude titik pusat
+     *   - radius   (optional) : radius pencarian dalam km (default: 5, max: 50)
+     *   - category (optional) : slug kategori untuk filter
      *
      * Header:
      *   X-API-KEY : JAJANMRANGGEN_SECRET_KEY_2024
@@ -26,7 +31,6 @@ class KulinerApi extends BaseController
         $radius   = $this->request->getGet('radius') ?? 5;
         $category = $this->request->getGet('category');
 
-        // Validasi parameter wajib
         if (!$lat || !$lng) {
             return $this->response
                 ->setStatusCode(400)
@@ -36,7 +40,6 @@ class KulinerApi extends BaseController
                 ]);
         }
 
-        // Validasi tipe data
         if (!is_numeric($lat) || !is_numeric($lng)) {
             return $this->response
                 ->setStatusCode(400)
@@ -46,7 +49,6 @@ class KulinerApi extends BaseController
                 ]);
         }
 
-        // Validasi radius
         $radius = (float) $radius;
         if ($radius <= 0 || $radius > 50) {
             return $this->response
@@ -59,8 +61,7 @@ class KulinerApi extends BaseController
 
         $model   = new KulinerModel();
         $kuliner = $model->getNearby((float) $lat, (float) $lng, $radius, $category ?: null);
-//
-        // Format data respons (hilangkan field sensitif)
+
         $data = array_map(function ($item) {
             return [
                 'id'             => (int) $item['id'],
@@ -78,12 +79,11 @@ class KulinerApi extends BaseController
         }, $kuliner);
 
         return $this->response->setJSON([
-            'status'  => 'success',
-            'total'   => count($data),
-            'radius'  => $radius,
-            'center'  => ['lat' => (float) $lat, 'lng' => (float) $lng],
-            'data'    => $data,
-            //
+            'status' => 'success',
+            'total'  => count($data),
+            'radius' => $radius,
+            'center' => ['lat' => (float) $lat, 'lng' => (float) $lng],
+            'data'   => $data,
         ]);
     }
 }

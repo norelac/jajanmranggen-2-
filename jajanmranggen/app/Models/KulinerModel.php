@@ -1,8 +1,13 @@
 <?php
+
 namespace App\Models;
+
 use CodeIgniter\Model;
 
-//
+/**
+ * KulinerModel - CRUD & query kuliner
+ * Termasuk: geocoding Haversine, auto-rating, slug generator
+ */
 class KulinerModel extends Model
 {
     protected $table      = 'kuliner';
@@ -14,6 +19,9 @@ class KulinerModel extends Model
     ];
     protected $useTimestamps = true;
 
+    /**
+     * Ambil kuliner dengan nama kategori
+     */
     public function getWithCategory($status = 'approved', $limit = 20, $offset = 0)
     {
         return $this->select('kuliner.*, categories.name as category_name')
@@ -25,6 +33,9 @@ class KulinerModel extends Model
                     ->findAll();
     }
 
+    /**
+     * Cari kuliner terdekat menggunakan rumus Haversine
+     */
     public function getNearby($lat, $lng, $radius = 5, $categorySlug = null)
     {
         $haversine = "(6371 * acos(cos(radians($lat)) * cos(radians(latitude))
@@ -44,6 +55,9 @@ class KulinerModel extends Model
         return $builder->findAll();
     }
 
+    /**
+     * Hitung & update rata-rata rating dari semua review
+     */
     public function updateAverageRating($kuliner_id)
     {
         $avg = $this->db->table('reviews')
@@ -54,6 +68,9 @@ class KulinerModel extends Model
         $this->update($kuliner_id, ['average_rating' => round($avg ?? 0, 2)]);
     }
 
+    /**
+     * Buat slug unik dari nama kuliner
+     */
     public function makeSlug($name)
     {
         $slug  = url_title($name, '-', true);
@@ -61,6 +78,9 @@ class KulinerModel extends Model
         return $count > 0 ? $slug . '-' . time() : $slug;
     }
 
+    /**
+     * Ambil semua kuliner milik satu kontributor
+     */
     public function getByContributor($contributor_id)
     {
         return $this->select('kuliner.*, categories.name as category_name')

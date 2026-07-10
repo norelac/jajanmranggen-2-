@@ -5,6 +5,9 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\TagModel;
 
+/**
+ * Tags Controller - CRUD tag oleh admin
+ */
 class Tags extends BaseController
 {
     protected $tagModel;
@@ -14,6 +17,9 @@ class Tags extends BaseController
         $this->tagModel = new TagModel();
     }
 
+    /**
+     * Daftar semua tag
+     */
     public function index()
     {
         $data = [
@@ -24,6 +30,9 @@ class Tags extends BaseController
         return view('admin/tags/index', $data);
     }
 
+    /**
+     * Form tambah tag
+     */
     public function create()
     {
         $data = [
@@ -33,6 +42,9 @@ class Tags extends BaseController
         return view('admin/tags/create', $data);
     }
 
+    /**
+     * Simpan tag baru
+     */
     public function store()
     {
         $rules = [
@@ -46,7 +58,6 @@ class Tags extends BaseController
         $name = $this->request->getPost('name');
         $slug = url_title($name, '-', true);
 
-        // Make slug unique
         $existing = $this->tagModel->where('slug', $slug)->countAllResults();
         if ($existing > 0) {
             $slug .= '-' . time();
@@ -60,6 +71,9 @@ class Tags extends BaseController
         return redirect()->to('/admin/tags')->with('success', 'Tag berhasil ditambahkan.');
     }
 
+    /**
+     * Form edit tag
+     */
     public function edit($id)
     {
         $tag = $this->tagModel->find($id);
@@ -75,6 +89,9 @@ class Tags extends BaseController
         return view('admin/tags/edit', $data);
     }
 
+    /**
+     * Update tag
+     */
     public function update($id)
     {
         $tag = $this->tagModel->find($id);
@@ -97,6 +114,9 @@ class Tags extends BaseController
         return redirect()->to('/admin/tags')->with('success', 'Tag berhasil diperbarui.');
     }
 
+    /**
+     * Hapus tag
+     */
     public function delete($id)
     {
         $tag = $this->tagModel->find($id);

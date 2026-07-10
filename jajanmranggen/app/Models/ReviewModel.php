@@ -1,7 +1,12 @@
 <?php
+
 namespace App\Models;
+
 use CodeIgniter\Model;
 
+/**
+ * ReviewModel - Ulasan & rating kuliner
+ */
 class ReviewModel extends Model
 {
     protected $table            = 'reviews';

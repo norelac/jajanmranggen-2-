@@ -5,6 +5,9 @@ namespace App\Controllers;
 use App\Models\FavoriteModel;
 use App\Models\KulinerModel;
 
+/**
+ * Favorites Controller - Toggle & list favorit user
+ */
 class Favorites extends BaseController
 {
     protected $favoriteModel;
@@ -17,8 +20,7 @@ class Favorites extends BaseController
     }
 
     /**
-     * Toggle favorite via AJAX
-     * POST /favorites/toggle
+     * Toggle favorit via AJAX POST /favorites/toggle
      */
     public function toggle()
     {
@@ -43,15 +45,14 @@ class Favorites extends BaseController
         $action = $this->favoriteModel->toggle($user_id, $kuliner_id);
 
         return $this->response->setJSON([
-            'status' => 'success',
-            'action' => $action,
+            'status'  => 'success',
+            'action'  => $action,
             'message' => $action === 'added' ? 'Ditambahkan ke favorit.' : 'Dihapus dari favorit.',
         ]);
     }
 
     /**
-     * My favorites list
-     * GET /favorites
+     * Halaman daftar favorit saya GET /favorites
      */
     public function index()
     {

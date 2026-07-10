@@ -4,14 +4,20 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
+/**
+ * FavoriteModel - Toggle & query favorit user
+ */
 class FavoriteModel extends Model
 {
     protected $table      = 'favorites';
     protected $primaryKey = 'id';
     protected $allowedFields = ['user_id', 'kuliner_id'];
     protected $useTimestamps = true;
-    protected $updatedField  = ''; // no updated_at in favorites
+    protected $updatedField  = '';
 
+    /**
+     * Cek apakah kuliner sudah difavoritkan user
+     */
     public function isFavorited($user_id, $kuliner_id): bool
     {
         return $this->where('user_id', $user_id)
@@ -19,6 +25,9 @@ class FavoriteModel extends Model
                     ->countAllResults() > 0;
     }
 
+    /**
+     * Toggle favorit: tambah jika belum ada, hapus jika sudah ada
+     */
     public function toggle($user_id, $kuliner_id): string
     {
         $existing = $this->where('user_id', $user_id)
@@ -34,6 +43,9 @@ class FavoriteModel extends Model
         return 'added';
     }
 
+    /**
+     * Ambil semua favorit user beserta data kuliner
+     */
     public function getUserFavorites($user_id)
     {
         return $this->select('favorites.*, kuliner.name, kuliner.slug, kuliner.address, kuliner.average_rating, kuliner.is_promoted, kuliner.promoted_until, categories.name as category_name')

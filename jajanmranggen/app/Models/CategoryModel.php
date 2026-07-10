@@ -1,7 +1,12 @@
 <?php
+
 namespace App\Models;
+
 use CodeIgniter\Model;
 
+/**
+ * CategoryModel - Kategori kuliner
+ */
 class CategoryModel extends Model
 {
     protected $table      = 'categories';

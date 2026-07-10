@@ -1,10 +1,15 @@
 <?php
+
 namespace App\Controllers\Contributor;
+
 use App\Controllers\BaseController;
 use App\Models\KulinerModel;
 use App\Models\CategoryModel;
 use App\Models\PhotoModel;
 
+/**
+ * KulinerContributor Controller - CRUD kuliner & geocoding oleh kontributor
+ */
 class KulinerContributor extends BaseController
 {
     protected $kulinerModel;
@@ -18,18 +23,27 @@ class KulinerContributor extends BaseController
         $this->photoModel    = new PhotoModel();
     }
 
+    /**
+     * Daftar kuliner milik kontributor
+     */
     public function index()
     {
         $data['kuliner'] = $this->kulinerModel->getByContributor(session()->get('user_id'));
         return view('contributor/kuliner/index', $data);
     }
 
+    /**
+     * Form tambah kuliner
+     */
     public function create()
     {
         $data['categories'] = $this->categoryModel->findAll();
         return view('contributor/kuliner/create', $data);
     }
 
+    /**
+     * Simpan kuliner baru
+     */
     public function store()
     {
         $rules = [
@@ -39,7 +53,7 @@ class KulinerContributor extends BaseController
             'category_id' => 'required|integer',
             'latitude'    => 'permit_empty|decimal',
             'longitude'   => 'permit_empty|decimal',
-            'photo' => 'permit_empty|uploaded[photo]|max_size[photo,2048]|is_image[photo]',
+            'photo'       => 'permit_empty|uploaded[photo]|max_size[photo,2048]|is_image[photo]',
         ];
 
         if (!$this->validate($rules)) {
@@ -60,7 +74,6 @@ class KulinerContributor extends BaseController
             'status'         => 'pending',
         ]);
 
-        // Upload foto
         $photo = $this->request->getFile('photo');
         if ($photo && $photo->isValid() && !$photo->hasMoved()) {
             $this->processAndSavePhoto($photo, $kuliner_id, true);
@@ -69,6 +82,9 @@ class KulinerContributor extends BaseController
         return redirect()->to('/contributor/kuliner')->with('success', 'Kuliner berhasil ditambahkan, menunggu persetujuan admin.');
     }
 
+    /**
+     * Form edit kuliner
+     */
     public function edit($id)
     {
         $kuliner = $this->kulinerModel->find($id);
@@ -81,6 +97,9 @@ class KulinerContributor extends BaseController
         return view('contributor/kuliner/edit', $data);
     }
 
+    /**
+     * Update kuliner
+     */
     public function update($id)
     {
         $kuliner = $this->kulinerModel->find($id);
@@ -95,7 +114,7 @@ class KulinerContributor extends BaseController
             'category_id' => $this->request->getPost('category_id'),
             'latitude'    => $this->request->getPost('latitude') ?: null,
             'longitude'   => $this->request->getPost('longitude') ?: null,
-            'status'      => 'pending', // Re-review setelah edit
+            'status'      => 'pending',
         ]);
 
         $photo = $this->request->getFile('photo');
@@ -106,6 +125,9 @@ class KulinerContributor extends BaseController
         return redirect()->to('/contributor/kuliner')->with('success', 'Data kuliner diperbarui.');
     }
 
+    /**
+     * Hapus kuliner
+     */
     public function delete($id)
     {
         $kuliner = $this->kulinerModel->find($id);
@@ -116,15 +138,17 @@ class KulinerContributor extends BaseController
         return redirect()->to('/contributor/kuliner')->with('success', 'Kuliner berhasil dihapus.');
     }
 
-    //Geocoding via Nominatim
+    /**
+     * Geocoding AJAX - Konversi alamat ke koordinat via Nominatim API
+     * Hasil di-cache selama 24 jam
+     */
     public function geocode()
     {
         $address = $this->request->getGet('q');
         if (!$address) {
             return $this->response->setJSON(['error' => 'Alamat kosong']);
         }
-        
-        //cache handling (menggunakan key baru agar tidak tabrakan dengan format cache lama)
+
         $cacheKey = 'geocode_suggestions_' . md5($address);
         $cache    = \Config\Services::cache();
 
@@ -132,14 +156,14 @@ class KulinerContributor extends BaseController
             return $this->response->setJSON($cached);
         }
 
-        $client   = \Config\Services::curlrequest();
+        $client = \Config\Services::curlrequest();
         try {
             $response = $client->get('https://nominatim.openstreetmap.org/search', [
-                'query'   => [
-                    'q'            => $address, 
-                    'format'       => 'json', 
+                'query' => [
+                    'q'            => $address,
+                    'format'       => 'json',
                     'limit'        => 5,
-                    'countrycodes' => 'id' // membatasi pencarian di Indonesia saja
+                    'countrycodes' => 'id'
                 ],
                 'headers' => ['User-Agent' => 'JajanMranggen/1.0 (jajanmranggen@gmail.com)'],
             ]);
@@ -162,11 +186,14 @@ class KulinerContributor extends BaseController
             ];
         }
 
-        $cache->save($cacheKey, $data, 86400); //cache 24 jam
+        $cache->save($cacheKey, $data, 86400);
 
         return $this->response->setJSON($data);
     }
 
+    /**
+     * Proses upload foto: resize & buat thumbnail
+     */
     private function processAndSavePhoto($file, $kuliner_id, $isPrimary = false)
     {
         $uploadPath = ROOTPATH . 'public/uploads/kuliner/';
@@ -178,13 +205,11 @@ class KulinerContributor extends BaseController
         $newName = $file->getRandomName();
         $file->move($uploadPath, $newName);
 
-        //resize to max 800px width
         \Config\Services::image()
             ->withFile($uploadPath . $newName)
             ->resize(800, 600, true, 'width')
             ->save($uploadPath . $newName);
 
-        //thumbnail
         \Config\Services::image()
             ->withFile($uploadPath . $newName)
             ->fit(200, 200, 'center')

@@ -1,10 +1,18 @@
 <?php
+
 namespace App\Controllers\Contributor;
+
 use App\Controllers\BaseController;
 use App\Models\KulinerModel;
 
+/**
+ * Contributor Dashboard - Ringkasan data kontributor
+ */
 class Dashboard extends BaseController
 {
+    /**
+     * Tampilkan dashboard kontributor dengan statistik kuliner
+     */
     public function index()
     {
         $kulinerModel = new KulinerModel();

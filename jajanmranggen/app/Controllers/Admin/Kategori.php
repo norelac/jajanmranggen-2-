@@ -5,6 +5,9 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\CategoryModel;
 
+/**
+ * Kategori Controller - CRUD kategori oleh admin
+ */
 class Kategori extends BaseController
 {
     protected $categoryModel;
@@ -14,6 +17,9 @@ class Kategori extends BaseController
         $this->categoryModel = new CategoryModel();
     }
 
+    /**
+     * Daftar semua kategori
+     */
     public function index()
     {
         $data = [
@@ -24,6 +30,9 @@ class Kategori extends BaseController
         return view('admin/kategori/index', $data);
     }
 
+    /**
+     * Form tambah kategori
+     */
     public function create()
     {
         $data = [
@@ -33,6 +42,9 @@ class Kategori extends BaseController
         return view('admin/kategori/create', $data);
     }
 
+    /**
+     * Simpan kategori baru
+     */
     public function store()
     {
         $rules = [
@@ -47,7 +59,6 @@ class Kategori extends BaseController
         $name = $this->request->getPost('name');
         $slug = url_title($name, '-', true);
 
-        // Make slug unique
         $existing = $this->categoryModel->where('slug', $slug)->countAllResults();
         if ($existing > 0) {
             $slug .= '-' . time();
@@ -62,6 +73,9 @@ class Kategori extends BaseController
         return redirect()->to('/admin/kategori')->with('success', 'Kategori berhasil ditambahkan.');
     }
 
+    /**
+     * Form edit kategori
+     */
     public function edit($id)
     {
         $kategori = $this->categoryModel->find($id);
@@ -77,6 +91,9 @@ class Kategori extends BaseController
         return view('admin/kategori/edit', $data);
     }
 
+    /**
+     * Update kategori
+     */
     public function update($id)
     {
         $kategori = $this->categoryModel->find($id);
@@ -101,6 +118,9 @@ class Kategori extends BaseController
         return redirect()->to('/admin/kategori')->with('success', 'Kategori berhasil diperbarui.');
     }
 
+    /**
+     * Hapus kategori
+     */
     public function delete($id)
     {
         $kategori = $this->categoryModel->find($id);

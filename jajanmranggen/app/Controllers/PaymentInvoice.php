@@ -1,12 +1,19 @@
 <?php
+
 namespace App\Controllers;
 
 use App\Models\PaymentModel;
 use App\Models\KulinerModel;
 use App\Models\UserModel;
 
+/**
+ * PaymentInvoice Controller - Tampilkan bukti pembayaran publik
+ */
 class PaymentInvoice extends BaseController
 {
+    /**
+     * Tampilkan invoice berdasarkan nomor invoice
+     */
     public function show($invoice_number)
     {
         $paymentModel = new PaymentModel();
@@ -23,10 +30,10 @@ class PaymentInvoice extends BaseController
         $user    = $userModel->find($payment['user_id']);
 
         $data = [
-            'title'    => 'Invoice ' . $payment['invoice_number'],
-            'payment'  => $payment,
-            'kuliner'  => $kuliner,
-            'user'     => $user,
+            'title'   => 'Invoice ' . $payment['invoice_number'],
+            'payment' => $payment,
+            'kuliner' => $kuliner,
+            'user'    => $user,
         ];
 
         return view('payment/invoice', $data);

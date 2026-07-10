@@ -5,6 +5,9 @@ namespace App\Controllers\Admin;
 use App\Controllers\BaseController;
 use App\Models\UserModel;
 
+/**
+ * Users Controller - Manajemen pengguna oleh admin
+ */
 class Users extends BaseController
 {
     protected $userModel;
@@ -14,6 +17,9 @@ class Users extends BaseController
         $this->userModel = new UserModel();
     }
 
+    /**
+     * Daftar semua pengguna dengan pencarian & filter role
+     */
     public function index()
     {
         $search = $this->request->getGet('q') ?: '';
@@ -43,9 +49,11 @@ class Users extends BaseController
         return view('admin/users/index', $data);
     }
 
+    /**
+     * Hapus pengguna (kecuali akun sendiri)
+     */
     public function delete($id)
     {
-        // Prevent deleting own account
         if ($id == session()->get('user_id')) {
             return redirect()->to('/admin/users')->with('error', 'Tidak bisa menghapus akun sendiri.');
         }

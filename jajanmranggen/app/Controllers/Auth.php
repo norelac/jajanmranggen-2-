@@ -1,7 +1,12 @@
 <?php
+
 namespace App\Controllers;
+
 use App\Models\UserModel;
 
+/**
+ * Auth Controller - Login, Register, Logout
+ */
 class Auth extends BaseController
 {
     protected $userModel;
@@ -11,6 +16,9 @@ class Auth extends BaseController
         $this->userModel = new UserModel();
     }
 
+    /**
+     * Halaman login
+     */
     public function login()
     {
         if (session()->get('user_id')) {
@@ -19,6 +27,9 @@ class Auth extends BaseController
         return view('auth/login');
     }
 
+    /**
+     * Proses login
+     */
     public function loginPost()
     {
         $rules = [
@@ -47,11 +58,17 @@ class Auth extends BaseController
         return $this->redirectByRole();
     }
 
+    /**
+     * Halaman registrasi
+     */
     public function register()
     {
         return view('auth/register');
     }
 
+    /**
+     * Proses registrasi
+     */
     public function registerPost()
     {
         $rules = [
@@ -76,12 +93,18 @@ class Auth extends BaseController
         return redirect()->to('/login')->with('success', 'Registrasi berhasil! Silakan login.');
     }
 
+    /**
+     * Logout
+     */
     public function logout()
     {
         session()->destroy();
         return redirect()->to('/login');
     }
 
+    /**
+     * Redirect berdasarkan role user
+     */
     private function redirectByRole()
     {
         $role = session()->get('role');

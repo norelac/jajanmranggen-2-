@@ -1,9 +1,13 @@
 <?php
+
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use App\Models\PaymentModel;
 
+/**
+ * Payments Controller - Riwayat pembayaran oleh admin
+ */
 class Payments extends BaseController
 {
     protected $paymentModel;
@@ -13,9 +17,11 @@ class Payments extends BaseController
         $this->paymentModel = new PaymentModel();
     }
 
+    /**
+     * Daftar semua riwayat pembayaran
+     */
     public function index()
     {
-        // Join with users and kuliners
         $payments = $this->paymentModel
             ->select('payments.*, users.username, users.email, kuliner.name as kuliner_name')
             ->join('users', 'users.id = payments.user_id', 'left')
@@ -24,9 +30,9 @@ class Payments extends BaseController
             ->findAll();
 
         $data = [
-            'title' => 'Riwayat Pembayaran',
+            'title'      => 'Riwayat Pembayaran',
             'page_title' => 'Riwayat Pembayaran',
-            'payments' => $payments
+            'payments'   => $payments
         ];
 
         return view('admin/payments/index', $data);

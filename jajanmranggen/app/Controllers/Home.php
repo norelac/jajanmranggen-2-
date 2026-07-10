@@ -4,13 +4,18 @@ namespace App\Controllers;
 
 use App\Models\KulinerModel;
 
+/**
+ * Home Controller - Halaman utama
+ */
 class Home extends BaseController
 {
+    /**
+     * Tampilkan halaman utama dengan 6 kuliner unggulan
+     */
     public function index(): string
     {
         $kulinerModel = new KulinerModel();
-        
-        // Fetch 6 featured kuliners (approved, maybe sort by rating or random)
+
         $featured = $kulinerModel->select('kuliner.*, categories.name as category_name')
             ->join('categories', 'categories.id = kuliner.category_id', 'left')
             ->where('kuliner.status', 'approved')

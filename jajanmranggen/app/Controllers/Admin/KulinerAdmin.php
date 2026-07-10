@@ -6,6 +6,9 @@ use App\Controllers\BaseController;
 use App\Models\KulinerModel;
 use App\Models\CategoryModel;
 
+/**
+ * KulinerAdmin Controller - Moderasi kuliner oleh admin
+ */
 class KulinerAdmin extends BaseController
 {
     protected $kulinerModel;
@@ -17,6 +20,9 @@ class KulinerAdmin extends BaseController
         $this->categoryModel = new CategoryModel();
     }
 
+    /**
+     * Daftar semua kuliner dengan filter status & pencarian
+     */
     public function index()
     {
         $status = $this->request->getGet('status') ?: '';
@@ -31,7 +37,7 @@ class KulinerAdmin extends BaseController
         if ($status) {
             $builder->where('kuliner.status', $status);
         }
-        // kalau ngesearch bisa pake semua kata/ga spesifik (memakai 'OR LIKE')
+
         if ($search) {
             $words = array_filter(explode(' ', trim($search)));
             if (!empty($words)) {
@@ -58,6 +64,9 @@ class KulinerAdmin extends BaseController
         return view('admin/kuliner/index', $data);
     }
 
+    /**
+     * Detail satu kuliner
+     */
     public function show($id)
     {
         $kuliner = $this->kulinerModel
@@ -79,6 +88,9 @@ class KulinerAdmin extends BaseController
         return view('admin/kuliner/show', $data);
     }
 
+    /**
+     * Setujui kuliner
+     */
     public function approve($id)
     {
         if ($this->kulinerModel->update($id, ['status' => 'approved'])) {
@@ -87,6 +99,9 @@ class KulinerAdmin extends BaseController
         return redirect()->back()->with('error', 'Gagal menyetujui kuliner.');
     }
 
+    /**
+     * Tolak kuliner
+     */
     public function reject($id)
     {
         if ($this->kulinerModel->update($id, ['status' => 'rejected'])) {
@@ -95,6 +110,9 @@ class KulinerAdmin extends BaseController
         return redirect()->back()->with('error', 'Gagal menolak kuliner.');
     }
 
+    /**
+     * Hapus kuliner
+     */
     public function delete($id)
     {
         $kuliner = $this->kulinerModel->find($id);
