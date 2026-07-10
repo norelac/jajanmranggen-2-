@@ -36,7 +36,7 @@ class FavoriteModel extends Model
 
     public function getUserFavorites($user_id)
     {
-        return $this->select('favorites.*, kuliner.name, kuliner.slug, kuliner.address, kuliner.average_rating, categories.name as category_name')
+        return $this->select('favorites.*, kuliner.name, kuliner.slug, kuliner.address, kuliner.average_rating, kuliner.is_promoted, kuliner.promoted_until, categories.name as category_name')
                     ->join('kuliner', 'kuliner.id = favorites.kuliner_id')
                     ->join('categories', 'categories.id = kuliner.category_id', 'left')
                     ->where('favorites.user_id', $user_id)

@@ -124,3 +124,15 @@ _modules/*
 
 /results/
 /phpunit.xml
+
+#-------------------------
+# Project Specific
+#-------------------------
+/response.txt
+/builds
+
+# User uploads (sensitive data)
+/public/uploads/kuliner/*
+!/public/uploads/kuliner/.gitkeep
+/public/uploads/thumbnails/*
+!/public/uploads/thumbnails/.gitkeep

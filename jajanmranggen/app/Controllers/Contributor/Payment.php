@@ -150,32 +150,50 @@ class Payment extends BaseController
 
     private function verifyWithDoku($payment)
     {
-        // Coba panggil webhook endpoint internal untuk verifikasi
-        // Kirim POST ke localhost:8080/api/payment/notification dengan payload
-        $payload = json_encode([
-            'order' => ['invoice_number' => $payment['invoice_number'], 'amount' => (float)$payment['amount']],
-            'transaction' => ['status' => 'SUCCESS'],
-            'channel' => ['id' => 'DOKU'],
-            'service' => ['id' => 'CHECKOUT'],
-            'acquirer' => ['id' => 'DOKU'],
+        $paymentModel = new PaymentModel();
+        $kulinerModel = new KulinerModel();
+        $userModel    = new UserModel();
+        $wa           = new WhatsappNotification();
+
+        $paymentModel->update($payment['id'], [
+            'status'         => 'paid',
+            'payment_method' => $payment['payment_method'] ?? 'DOKU',
         ]);
 
-        $ch = curl_init('http://localhost:8080/api/payment/notification');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'X-Internal-Verify: true',
+        $kulinerModel->update($payment['kuliner_id'], [
+            'is_promoted'    => 1,
+            'promoted_until' => date('Y-m-d H:i:s', strtotime('+7 days')),
         ]);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
 
-        if ($httpCode == 200) {
-            log_message('info', 'Internal verify success for: ' . $payment['invoice_number']);
+        $user    = $userModel->find($payment['user_id']);
+        $kuliner = $kulinerModel->find($payment['kuliner_id']);
+        $invoiceUrl = base_url('payment/invoice/' . $payment['invoice_number']);
+
+        if ($user && $user['phone']) {
+            $msg = "✅ Pembayaran sponsor *{$kuliner['name']}* berhasil!\n"
+                 . "Invoice: {$payment['invoice_number']}\n"
+                 . "Kuliner Anda akan dipromosikan selama 7 hari.\n"
+                 . "Bukti pembayaran: {$invoiceUrl}\n"
+                 . "Terima kasih! 🍜";
+            $wa->send($user['phone'], $msg);
         }
+
+        $emailService = \Config\Services::email();
+        $emailService->setTo($user['email']);
+        $emailService->setSubject('Pembayaran Sponsor Berhasil - JajanMranggen');
+        $emailService->setMessage(
+            "<h2>Pembayaran Berhasil!</h2>
+            <p>Halo <strong>{$user['username']}</strong>,</p>
+            <p>Kuliner <strong>{$kuliner['name']}</strong> kamu berhasil disponsori selama 7 hari.</p>
+            <p>Invoice: <code>{$payment['invoice_number']}</code></p>
+            <p>Lihat bukti pembayaran: <a href=\"{$invoiceUrl}\">{$invoiceUrl}</a></p>
+            <p>Terima kasih telah menggunakan JajanMranggen! 🍜</p>"
+        );
+        if (!$emailService->send()) {
+            log_message('error', 'Email Gagal: ' . print_r($emailService->printDebugger(['headers', 'subject']), true));
+        }
+
+        log_message('info', 'Internal verify success for: ' . $payment['invoice_number']);
     }
 
     private function processPaymentSuccess($payment, $paymentMethod)

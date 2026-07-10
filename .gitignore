@@ -1,0 +1,22 @@
+#-------------------------
+# Root .gitignore
+#-------------------------
+
+# Vendor (root level - midtrans dependency)
+vendor/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment
+.env
+.env.local
+
+# Temporary / debug
+*.log

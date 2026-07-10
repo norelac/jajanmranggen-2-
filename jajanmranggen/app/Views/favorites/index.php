@@ -2,45 +2,44 @@
 
 <?= $this->section('extra_head') ?>
 <style>
-    .page-header-fav {
-        background: linear-gradient(135deg, var(--dark) 0%, #1a1a2e 100%);
-        color: white;
-        padding: 60px 0 40px;
-        margin-bottom: 40px;
-    }
-
-    .favorite-float-btn {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        z-index: 3;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255,255,255,0.9);
-        backdrop-filter: blur(4px);
-        border: none;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        color: #e11d48;
-        font-size: 1.15rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .favorite-float-btn:hover {
-        transform: scale(1.15);
-        background: white;
-        box-shadow: 0 6px 15px rgba(225, 29, 72, 0.3);
-    }
+.fav-header {
+    background: linear-gradient(135deg, var(--dark) 0%, #1a1a2e 100%);
+    color: white;
+    padding: 60px 0 40px;
+    margin-bottom: 40px;
+}
+.fav-float-btn {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 3;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(4px);
+    border: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    color: #e11d48;
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+.fav-float-btn:hover {
+    transform: scale(1.15);
+    background: white;
+    box-shadow: 0 6px 15px rgba(225, 29, 72, 0.3);
+}
 </style>
 <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
 
-<div class="page-header-fav text-center">
+<div class="fav-header text-center">
     <div class="container">
         <h1 class="fw-bold mb-3 font-outfit"><i class="bi bi-heart-fill text-danger me-2"></i>Favorit Saya</h1>
         <p class="text-light opacity-75">Koleksi tempat kuliner favorit yang telah Anda simpan.</p>
@@ -66,16 +65,19 @@
                     <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
                          alt="<?= esc($fav['name']) ?>"
                          class="kuliner-img">
-                    <button class="favorite-float-btn btn-unfavorite"
+                    <?php if (isset($fav['is_promoted']) && $fav['is_promoted']): ?>
+                    <div class="sponsor-badge"><i class="bi bi-star-fill me-1"></i> PROMOTED</div>
+                    <?php endif; ?>
+                    <div class="rating-badge">
+                        <i class="bi bi-star-fill"></i>
+                        <?= number_format($fav['average_rating'], 1) ?>
+                    </div>
+                    <button class="fav-float-btn btn-unfav"
                             data-kuliner-id="<?= $fav['kuliner_id'] ?>"
                             title="Hapus dari favorit"
                             onclick="event.preventDefault(); event.stopPropagation();">
                         <i class="bi bi-heart-fill"></i>
                     </button>
-                    <div class="rating-badge">
-                        <i class="bi bi-star-fill"></i>
-                        <?= number_format($fav['average_rating'], 1) ?>
-                    </div>
                 </div>
                 <div class="kuliner-content">
                     <div class="kuliner-category"><?= esc($fav['category_name'] ?? 'Kuliner') ?></div>
@@ -93,23 +95,17 @@
 
 <?= $this->section('extra_js') ?>
 <script>
-document.querySelectorAll('.btn-unfavorite').forEach(function(btn) {
+document.querySelectorAll('.btn-unfav').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-
-        const kuliner_id = this.dataset.kuliner_id || this.dataset.kulinerId;
+        const id = this.dataset.kulinerId || this.dataset.kuliner_id;
         if (!confirm('Hapus dari favorit?')) return;
-
         const card = this.closest('.fav-item');
-
         fetch('<?= base_url('favorites/toggle') ?>', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: '<?= csrf_token() ?>=' + encodeURIComponent('<?= csrf_hash() ?>') + '&kuliner_id=' + kuliner_id
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+            body: '<?= csrf_token() ?>=' + encodeURIComponent('<?= csrf_hash() ?>') + '&kuliner_id=' + id
         })
         .then(r => r.json())
         .then(data => {
@@ -117,12 +113,7 @@ document.querySelectorAll('.btn-unfavorite').forEach(function(btn) {
                 card.style.transition = 'all 0.3s';
                 card.style.opacity = '0';
                 card.style.transform = 'scale(0.9)';
-                setTimeout(function() {
-                    card.remove();
-                    if (document.querySelectorAll('.fav-item').length === 0) {
-                        location.reload();
-                    }
-                }, 300);
+                setTimeout(() => { card.remove(); if (!document.querySelectorAll('.fav-item').length) location.reload(); }, 300);
             }
         });
     });

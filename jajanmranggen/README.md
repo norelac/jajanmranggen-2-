@@ -1,124 +1,196 @@
-# JajanMranggen - Kuliner Review Platform 🍔🗺️
+# JajanMranggen - Kuliner Review Platform
 
-JajanMranggen adalah platform berbasis web untuk menemukan, menambahkan, dan mengulas tempat makan atau jajanan di sekitar. Sistem ini dibangun dengan arsitektur MVC menggunakan **CodeIgniter 4**, dilengkapi integrasi geocoding otomatis (**OpenStreetMap Nominatim API**), peta interaktif (**Leaflet.js**), dan pembayaran sponsor (**DOKU Payment Gateway**).
-
----
-
-## 🌟 Fitur Utama
-
-- **🌍 Peta Interaktif & Geocoding**: Otomatis mendeteksi koordinat (Latitude/Longitude) dari teks alamat, ditampilkan dengan Leaflet.js.
-- **🔐 Multi-Role Auth (Admin & Kontributor)**: Pembatasan akses menggunakan filter CI4.
-- **⭐ Sistem Review & Rating Dinamis**: Auto-calculate nilai rata-rata dari seluruh ulasan pelanggan.
-- **❤️ Favorit (Bookmark)**: Simpan tempat kuliner favorit menggunakan sistem AJAX.
-- **🖼️ Auto-Resize Upload**: Otomatis memperkecil resolusi foto unggahan menggunakan CI4 Image Manipulation.
-- **🚀 API Endpoint**: Expose data spasial kuliner melalui `GET /api/kuliner` (dilindungi API Key).
-- **💳 Integrasi DOKU Payment Gateway**: Fitur sponsor bagi kontributor untuk mempromosikan tempat kulinernya.
+Platform berbasis web untuk menemukan, menambahkan, dan mengulas tempat makan atau jajanan di sekitar Mranggen, Demak. Dibangun dengan **CodeIgniter 4**, dilengkapi integrasi geocoding (**OpenStreetMap Nominatim API**), peta interaktif (**Leaflet.js**), REST API publik, dan pembayaran sponsor (**DOKU Payment Gateway**).
 
 ---
 
-## 💻 Tech Stack
-- **Framework:** CodeIgniter 4
-- **Database:** MySQL
-- **Frontend:** Bootstrap 5, Custom Vanilla CSS, Bootstrap Icons
-- **Maps:** Leaflet.js
-- **Geocoding API:** OpenStreetMap Nominatim API
-- **Payment Gateway:** DOKU (Sandbox)
+## Fitur Utama
+
+- **Peta Interaktif & Geocoding** - Otomatis mendeteksi koordinat dari teks alamat menggunakan Nominatim API, ditampilkan dengan Leaflet.js
+- **Multi-Role Auth (Admin & Kontributor)** - Sistem autentikasi session dengan pembatasan akses per role
+- **CRUD Kuliner** - Kontributor dapat menambah, mengedit, dan menghapus data kuliner
+- **Review & Rating** - Sistem ulasan dengan auto-calculate rata-rata rating
+- **Favorit (Bookmark)** - Simpan tempat kuliner favorit menggunakan AJAX
+- **Auto-Resize Upload** - Otomatis memperkecil resolusi foto menggunakan CI4 Image Manipulation
+- **REST API Endpoint** - Endpoint `GET /api/kuliner` untuk akses data spasial (dilindungi API Key)
+- **DOKU Payment Gateway** - Fitur sponsor kuliner dengan integrasi DOKU sandbox
+- **Notifikasi WhatsApp & Email** - Kirim notifikasi otomatis via Fonnte API dan SMTP
 
 ---
 
-## ⚙️ Persyaratan Sistem (Requirements)
-- PHP >= 8.1
-- Composer
-- Ekstensi PHP: `intl`, `mbstring`, `json`, `mysqlnd`, `curl`, `gd` (untuk auto-resize image)
-- MySQL / MariaDB (via XAMPP/Laragon)
+## Tech Stack
+
+| Komponen | Teknologi |
+|----------|-----------|
+| Framework | CodeIgniter 4 |
+| Database | MySQL / MariaDB |
+| Frontend | Bootstrap 5, Vanilla CSS, Bootstrap Icons |
+| Maps | Leaflet.js + OpenStreetMap |
+| Geocoding | Nominatim API (OpenStreetMap) |
+| Payment | DOKU Payment Gateway (Sandbox) |
+| WA Notification | Fonnte API |
+| Email | SMTP (Mailtrap untuk testing) |
 
 ---
 
-## 🚀 Panduan Instalasi (Langkah demi Langkah)
+## Cara Instalasi
 
-1. **Clone Repository**
-   ```bash
-   git clone https://github.com/username/jajanmranggen.git
-   cd jajanmranggen
-   ```
+### Prasyarat
 
-2. **Install Dependensi Composer**
-   ```bash
-   composer install
-   ```
+| Software | Versi Minimal | Keterangan |
+|----------|--------------|------------|
+| PHP | 8.1+ | Ekstensi: `curl`, `mbstring`, `mysqli`, `intl`, `openssl`, `gd` |
+| Composer | 2.x | Dependency manager PHP |
+| MySQL / MariaDB | 5.7+ / 10.4+ | Database server |
+| Web Server | Apache / Nginx | Bisa pakai Laragon/XAMPP |
 
-3. **Konfigurasi Environment (`.env`)**
-   Duplikat file `env` menjadi `.env` lalu buka file tersebut dan ubah konfigurasi berikut:
-   ```env
-   CI_ENVIRONMENT = development
+### Langkah 1 - Clone Repository
 
-   app.baseURL = 'http://localhost:8080/'
+```bash
+git clone https://github.com/norelac/jajanmranggen-2-.git
+cd jajanmranggen-2-/jajanmranggen
+```
 
-   database.default.hostname = localhost
-   database.default.database = jajanmranggen_db
-   database.default.username = root
-   database.default.password = 
-   database.default.DBDriver = MySQLi
+### Langkah 2 - Install Dependency
 
-   # Konfigurasi DOKU Payment Gateway
-   doku.clientId = 'BRN-0254-XXXXXXXXXXXXX'
-   doku.sharedKey = 'SK-XXXXXXXXXXXXXXXXXXXX'
-   doku.isProduction = false
-   ```
+```bash
+composer install
+```
 
-4. **Buat Database**
-   Buka phpMyAdmin / GUI Database Anda, buat database baru dengan nama `jajanmranggen_db`.
+### Langkah 3 - Konfigurasi Environment
 
-5. **Jalankan Migration & Seeder (Otomatis)**
-   Perintah ini akan membuat semua struktur tabel dan mengisi puluhan data dummy kuliner otomatis.
-   ```bash
-   php spark migrate:refresh --seed
-   ```
+Copy file `.env.example` menjadi `.env`:
 
-6. **Jalankan Local Development Server**
-   ```bash
-   php spark serve
-   ```
-   Akses aplikasi melalui browser di: **http://localhost:8080**
+```bash
+cp .env.example .env
+```
+
+Lalu edit file `.env` dan isi nilai berikut:
+
+```env
+CI_ENVIRONMENT = development
+app.baseURL = 'http://localhost:8080/'
+
+# Database
+database.default.hostname = localhost
+database.default.database = jajanmranggen
+database.default.username = root
+database.default.password =
+
+# DOKU Payment Gateway (Sandbox)
+doku.clientId = BRN-XXXX-XXXXXXXXXXXX
+doku.sharedKey = SK-XXXXXXXXXXXXXXXXXXXX
+doku.isProduction = false
+
+# Email (Mailtrap untuk testing)
+email.SMTPHost = sandbox.smtp.mailtrap.io
+email.SMTPUser = YOUR_MAILTRAP_USER
+email.SMTPPass = YOUR_MAILTRAP_PASSWORD
+email.SMTPPort = 2525
+
+# Fonnte WA Notification
+fonnte.token = YOUR_FONNTE_TOKEN
+
+# API Key
+api.secretKey = JAJANMRANGGEN_SECRET_KEY_2024
+```
+
+> **Catatan:** Untuk testing lokal, Anda bisa menggunakan akun Mailtrap (gratis) untuk SMTP dan Fonnte (gratis) untuk WhatsApp notification.
+
+### Langkah 4 - Buat Database
+
+Buka phpMyAdmin atau MySQL CLI, buat database baru:
+
+```sql
+CREATE DATABASE jajanmranggen CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
+
+### Langkah 5 - Jalankan Migration & Seeder
+
+```bash
+php spark migrate
+php spark db:seed MainSeeder
+```
+
+Perintah ini akan:
+- Membuat tabel: `users`, `categories`, `kuliner`, `reviews`, `favorites`, `payments`, dll.
+- Mengisi data awal: 3 user, 6 kategori, 20 kuliner dummy
+
+### Langkah 6 - Jalankan Server
+
+```bash
+php spark serve
+```
+
+Akses aplikasi di: **http://localhost:8080**
 
 ---
 
-## 🔑 Kredensial Akun Demo
+## Akun Demo
 
-Seeder otomatis membuatkan beberapa akun untuk testing:
+Seeder otomatis membuatkan akun berikut untuk testing:
 
-| Role | Username | Email | Password |
-| :--- | :--- | :--- | :--- |
-| **Admin** | admin | admin@jajanmranggen.test | `password123` |
-| **Kontributor** | bobby | bobby@example.com | `password123` |
-| **Kontributor** | andi | andi@example.com | `password123` |
-| **Kontributor** | siti | siti@example.com | `password123` |
-
----
-
-## 📊 Struktur Database (ERD Singkat)
-
-Proyek ini telah menempuh normalisasi 3NF dengan relasi antar tabel sebagai berikut:
-1. `users` (id, username, email, password, role)
-2. `categories` (id, name, slug, description)
-3. `tags` (id, name, slug)
-4. `kuliner` (id, name, slug, address, latitude, longitude, category_id, contributor_id, average_rating, status, dll.)
-5. `kuliner_tags` (kuliner_id, tag_id) -> Tabel pivot M:M
-6. `reviews` (id, kuliner_id, user_id, rating, comment)
-7. `favorites` (id, user_id, kuliner_id)
-8. `payments` (id, user_id, kuliner_id, invoice_number, amount, status, snap_token)
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | `admin@jajanmranggen.com` | `admin123` |
+| **Kontributor 1** | `kontributor1@gmail.com` | `pass123` |
+| **Kontributor 2** | `kontributor2@gmail.com` | `pass123` |
 
 ---
 
-## 📡 API Endpoint (Webservice)
-Tersedia API bagi developer pihak ketiga (misal: display info kampus / mobile app).
+## Konfigurasi .env
 
-### Autentikasi
-Semua request wajib menyertakan API Key melalui header:
+Pastikan semua variabel berikut sudah terisi di file `.env`:
 
-| Header | Nilai |
-| :--- | :--- |
-| `X-API-KEY` | `JAJANMRANGGEN_SECRET_KEY_2024` |
+| Variabel | Keterangan | Contoh |
+|----------|-----------|--------|
+| `database.default.hostname` | Host database | `localhost` |
+| `database.default.database` | Nama database | `jajanmranggen` |
+| `database.default.username` | Username MySQL | `root` |
+| `database.default.password` | Password MySQL | (kosong untuk Laragon/XAMPP) |
+| `doku.clientId` | Client ID DOKU Sandbox | `BRN-0254-XXXXXXXXXXXX` |
+| `doku.sharedKey` | Shared Key DOKU Sandbox | `SK-XXXXXXXXXXXXXXXX` |
+| `doku.isProduction` | Mode production | `false` (sandbox) |
+| `email.SMTPHost` | SMTP host | `sandbox.smtp.mailtrap.io` |
+| `email.SMTPUser` | SMTP username | dari Mailtrap |
+| `email.SMTPPass` | SMTP password | dari Mailtrap |
+| `fonnte.token` | Token Fonnte API | dari fonnte.com |
+| `api.secretKey` | API Key untuk REST API | `JAJANMRANGGEN_SECRET_KEY_2024` |
+
+---
+
+## Screenshot Fitur Utama
+
+### Halaman Login
+![Login](screenshots/login.png)
+
+### Dashboard Admin
+![Dashboard Admin](screenshots/admin-dashboard.png)
+
+### Dashboard Kontributor
+![Dashboard Kontributor](screenshots/contributor-dashboard.png)
+
+### Peta Interaktif & Geocoding
+![Peta dan Geocoding](screenshots/peta-geocoding.png)
+
+### CRUD Kuliner
+![CRUD Kuliner](screenshots/crud-kuliner.png)
+
+### Review & Rating
+![Review dan Rating](screenshots/review-rating.png)
+
+### REST API Endpoint
+![API Endpoint](screenshots/api-endpoint.png)
+
+### Payment Gateway (DOKU)
+![Payment Gateway](screenshots/payment-gateway.png)
+
+### Notifikasi WhatsApp & Email
+![Notifikasi](screenshots/notifikasi.png)
+
+---
+
+## REST API
 
 ### Endpoint: Cari Kuliner Terdekat
 
@@ -126,50 +198,53 @@ Semua request wajib menyertakan API Key melalui header:
 GET /api/kuliner
 ```
 
+**Headers:**
+
+| Header | Nilai |
+|--------|-------|
+| `X-API-KEY` | `JAJANMRANGGEN_SECRET_KEY_2024` |
+
 **Query Parameters:**
 
 | Parameter | Tipe | Required | Default | Deskripsi |
-| :--- | :--- | :---: | :---: | :--- |
-| `lat` | float | ✅ | - | Latitude titik pusat pencarian |
-| `lng` | float | ✅ | - | Longitude titik pusat pencarian |
-| `radius` | float | ❌ | `5` | Radius pencarian dalam km (max 50) |
-| `category` | string | ❌ | - | Slug kategori untuk filter (contoh: `bakso-mie`) |
+|-----------|------|----------|---------|-----------|
+| `lat` | float | Ya | - | Latitude titik pusat |
+| `lng` | float | Ya | - | Longitude titik pusat |
+| `radius` | float | Tidak | `5` | Radius pencarian dalam km (max 50) |
+| `category` | string | Tidak | - | Slug kategori (contoh: `bakso-mie`) |
 
 **Contoh Request:**
+
 ```http
 GET /api/kuliner?lat=-6.983&lng=110.409&radius=3&category=bakso-mie
 X-API-KEY: JAJANMRANGGEN_SECRET_KEY_2024
 ```
 
 **Contoh Response (200 OK):**
+
 ```json
 {
     "status": "success",
     "total": 2,
-    "radius": 3,
-    "center": {
-        "lat": -6.983,
-        "lng": 110.409
-    },
     "data": [
         {
             "id": 5,
             "name": "Bakso Pak Edi",
             "slug": "bakso-pak-edi",
-            "description": "Bakso sapi ukuran besar dengan kuah kaldu gurih...",
             "address": "Jl. Veteran No.15, Semarang",
             "latitude": -6.985,
             "longitude": 110.412,
             "category_name": "Bakso & Mie",
-            "average_rating": 4.5,
-            "is_promoted": true,
-            "distance_km": 0.42
+            "average_rating": 4.50,
+            "is_promoted": 1,
+            "distance": 0.42
         }
     ]
 }
 ```
 
-**Error Response (401 — API Key tidak valid):**
+**Error Response (401 - API Key tidak valid):**
+
 ```json
 {
     "status": "error",
@@ -177,39 +252,39 @@ X-API-KEY: JAJANMRANGGEN_SECRET_KEY_2024
 }
 ```
 
-**Error Response (400 — Parameter tidak lengkap):**
-```json
-{
-    "status": "error",
-    "message": "Parameter lat dan lng wajib diisi."
-}
+---
+
+## Struktur Project
+
+```
+jajanmranggen/
+├── app/
+│   ├── Config/              # Konfigurasi (Routes, Database, Email, Filters)
+│   ├── Controllers/
+│   │   ├── Admin/           # Controller admin
+│   │   ├── Api/             # Controller API (KulinerApi, PaymentNotification)
+│   │   ├── Contributor/     # Controller kontributor
+│   │   └── ...
+│   ├── Database/
+│   │   ├── Migrations/      # File migrasi database
+│   │   └── Seeds/           # Seeder data dummy
+│   ├── Filters/             # Filter (AuthFilter, ApiKeyFilter)
+│   ├── Libraries/           # Library (WhatsappNotification)
+│   ├── Models/              # Model database
+│   └── Views/               # Template view
+├── public/                  # Entry point (index.php)
+├── writable/                # Cache, logs, session
+├── .env.example             # Template environment
+├── composer.json            # Dependency PHP
+└── README.md                # Dokumentasi project
 ```
 
-### Catatan
-- Perhitungan jarak menggunakan **rumus Haversine** untuk akurasi spasial.
-- Data yang dikembalikan hanya kuliner dengan status **approved**.
+---
+
+## License
+
+MIT License
 
 ---
 
-## 💳 Payment Gateway (DOKU)
-
-Kontributor dapat mensponsori tempat kuliner untuk dipromosikan selama 7 hari.
-
-### Alur Pembayaran
-1. Kontributor memilih kuliner untuk disponsori (Rp50.000 / 7 hari)
-2. Sistem generate invoice & redirect ke halaman pembayaran **DOKU** (sandbox)
-3. Pelanggan membayar melalui channel yang tersedia di DOKU
-4. DOKU mengirim notifikasi ke endpoint `/api/payment/notification`
-5. Sistem verifikasi **HMAC Signature**, update status menjadi `paid`
-6. Kuliner otomatis di-set `is_promoted = 1` selama 7 hari
-7. Notifikasi dikirim ke kontributor melalui **WhatsApp** dan **Email**
-
-### Teknologi Notifikasi
-| Channel | Tools |
-| :--- | :--- |
-| **WhatsApp** | Fonnte API (via `WhatsappNotification` library) |
-| **Email** | SMTP Mailtrap (sandbox) |
-
----
-
-> Dibuat untuk memenuhi kualifikasi Tugas Akhir Pemrograman Web Lanjut (CodeIgniter 4) - Universitas Dian Nuswantoro.
+> Dibuat untuk memenuhi tugas akhir Pemrograman Web Lanjut - Universitas Dian Nuswantoro.

@@ -11,8 +11,8 @@
                             <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
                         </div>
                         <h3 class="fw-bold">Pembayaran Berhasil!</h3>
-<p class="text-muted mt-3 fs-5">
-                            Terima kasih, pembayaran untuk invoice <strong><?= esc($payment['invoice_number']) ?></strong> telah kami terima. Kuliner Anda kini telah dipromosikan.
+                        <p class="text-muted mt-3 fs-5">
+                            Terima kasih, pembayaran untuk invoice <strong><?= esc($payment['invoice_number']) ?></strong> telah <strong>Disetujui</strong>. Kuliner Anda kini telah dipromosikan.
                         </p>
                         <div class="mt-3">
                             <a href="<?= base_url('payment/invoice/' . $payment['invoice_number']) ?>" class="btn btn-outline-success btn-sm" target="_blank">
