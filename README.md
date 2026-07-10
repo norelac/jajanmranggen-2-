@@ -48,12 +48,13 @@ Platform berbasis web untuk menemukan, menambahkan, dan mengulas tempat makan at
 
 ```bash
 git clone https://github.com/norelac/jajanmranggen-2-.git
-cd jajanmranggen-2-/jajanmranggen
+cd jajanmranggen-2-
 ```
 
 ### Langkah 2 - Install Dependency
 
 ```bash
+cd jajanmranggen
 composer install
 ```
 
@@ -162,31 +163,28 @@ Pastikan semua variabel berikut sudah terisi di file `.env`:
 ## Screenshot Fitur Utama
 
 ### Halaman Login
-![Login](screenshots/login.png)
+![Login](jajanmranggen/screenshots/login.png)
 
 ### Dashboard Admin
-![Dashboard Admin](screenshots/admin-dashboard.png)
+![Dashboard Admin](jajanmranggen/screenshots/admin.png)
 
 ### Dashboard Kontributor
-![Dashboard Kontributor](screenshots/contributor-dashboard.png)
+![Dashboard Kontributor](jajanmranggen/screenshots/kontributor.png)
 
 ### Peta Interaktif & Geocoding
-![Peta dan Geocoding](screenshots/peta-geocoding.png)
+![Peta dan Geocoding](jajanmranggen/screenshots/peta-geocoding.png)
 
 ### CRUD Kuliner
-![CRUD Kuliner](screenshots/crud-kuliner.png)
+![CRUD Kuliner](jajanmranggen/screenshots/crud-kuliner.png)
 
 ### Review & Rating
-![Review dan Rating](screenshots/review-rating.png)
+![Review dan Rating](jajanmranggen/screenshots/review-rating.png)
 
 ### REST API Endpoint
-![API Endpoint](screenshots/api-endpoint.png)
+![API Endpoint](jajanmranggen/screenshots/api-endpoint.png)
 
 ### Payment Gateway (DOKU)
-![Payment Gateway](screenshots/payment-gateway.png)
-
-### Notifikasi WhatsApp & Email
-![Notifikasi](screenshots/notifikasi.png)
+![Payment Gateway](jajanmranggen/screenshots/payment-gateway.png)
 
 ---
 
@@ -275,6 +273,7 @@ jajanmranggen/
 ├── public/                  # Entry point (index.php, assets, uploads)
 ├── writable/                # Cache, logs, session
 ├── tests/                   # Unit test (AuthTest, ReviewRatingTest)
+├── screenshots/             # Screenshot fitur utama
 ├── .env.example             # Template environment
 ├── composer.json            # Dependency PHP
 └── README.md                # Dokumentasi project
